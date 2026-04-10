@@ -65,7 +65,10 @@ export default function TimeChart({
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
-    const entry = timeline.find((t) => t.date === dateStr);
+    // DB may return date as ISO string like "2026-04-10T00:00:00.000Z" — normalize
+    const entry = timeline.find(
+      (t) => String(t.date).slice(0, 10) === dateStr
+    );
     const hour = entry ? getHourFromTimestamp(entry.done_at) : null;
     days.push({
       date: dateStr,

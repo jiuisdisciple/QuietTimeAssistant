@@ -24,7 +24,7 @@ export default function DevotionPage({
   const [passage, setPassage] = useState<PassageData | null>(null);
   const [devotion, setDevotion] = useState<DevotionData | null>(null);
   const [content, setContent] = useState("");
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackReport, setFeedbackReport] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -257,10 +257,10 @@ export default function DevotionPage({
       )}
 
       {/* Editor / Read-only view */}
-      <div className="flex-1 mb-4">
+      <div className="flex-1 flex flex-col mb-4 min-h-0">
         {isReadOnly ? (
           <div
-            className="p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]"
+            className="flex-1 p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto"
             style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border)",
@@ -274,52 +274,51 @@ export default function DevotionPage({
             value={content}
             onChange={(e) => handleContentChange(e.target.value)}
             placeholder="오늘의 큐티를 작성하세요..."
-            className="w-full min-h-[300px] p-4 rounded-xl text-sm leading-relaxed resize-y outline-none"
+            className="flex-1 w-full p-4 rounded-xl text-sm leading-relaxed resize-none outline-none"
             style={{
               background: "var(--bg-input)",
               border: "1px solid var(--border)",
               color: "var(--text-primary)",
+              minHeight: "200px",
             }}
           />
         )}
       </div>
 
-      {/* Bottom: Feedback button */}
-      {isToday && content.trim() && (
-        <div className="flex justify-center pb-4">
-          <button
-            onClick={handleFeedback}
-            disabled={feedbackLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            <span>&#x1F50D;</span>
-            <span>{feedbackLoading ? "검토중..." : "피드백 받기"}</span>
-          </button>
+      {/* Bottom: Review buttons */}
+      {(isToday && content.trim()) || (isReadOnly && feedbackReport) ? (
+        <div className="flex justify-center gap-2 pb-4">
+          {isToday && content.trim() && (
+            <button
+              onClick={handleFeedback}
+              disabled={feedbackLoading}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              <span>&#x1F50D;</span>
+              <span>{feedbackLoading ? "검토중..." : "검토"}</span>
+            </button>
+          )}
+          {feedbackReport && (
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              <span>📄</span>
+              <span>검토 보기</span>
+            </button>
+          )}
         </div>
-      )}
-
-      {/* Past devotion feedback view */}
-      {isReadOnly && feedbackReport && (
-        <div className="flex justify-center pb-4">
-          <button
-            onClick={() => setShowFeedback(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm cursor-pointer"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            <span>&#x1F50D;</span>
-            <span>피드백 리포트 보기</span>
-          </button>
-        </div>
-      )}
+      ) : null}
 
       {/* Feedback Modal */}
       {showFeedback && feedbackReport && (

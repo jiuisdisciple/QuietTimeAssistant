@@ -40,7 +40,11 @@ export default function FeedbackModal({ report, onClose }: FeedbackModalProps) {
                 </h3>
               );
             }
-            if (line.includes("✓")) {
+            const isNoError =
+              line.includes("✓") ||
+              line.includes("발견되지 않았습니다") ||
+              line.includes("없습니다");
+            if (isNoError) {
               return (
                 <p key={i} className="my-1" style={{ color: "var(--success)" }}>
                   {line}

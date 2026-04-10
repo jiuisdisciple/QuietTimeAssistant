@@ -155,10 +155,22 @@ export default function Home() {
           지난 큐티
         </h2>
         <div className="space-y-2">
-          {devotions
-            .filter((d) => d.date !== today && d.done_at)
-            .map((d) => (
-              <Link href={`/devotion/${d.date}`} key={d.date}>
+          {(() => {
+            const past = devotions
+              .map((d) => ({ ...d, dateStr: String(d.date).slice(0, 10) }))
+              .filter((d) => d.dateStr !== today && d.done_at);
+            if (past.length === 0) {
+              return (
+                <p
+                  className="text-sm text-center py-4"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  아직 작성한 큐티가 없습니다
+                </p>
+              );
+            }
+            return past.map((d) => (
+              <Link href={`/devotion/${d.dateStr}`} key={d.dateStr}>
                 <div
                   className="p-3 rounded-lg transition-colors hover:opacity-90"
                   style={{
@@ -168,16 +180,25 @@ export default function Home() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                        {d.date}
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {d.dateStr}
                       </span>
                       {d.full_reference && (
-                        <span className="text-sm ml-2" style={{ color: "var(--text-secondary)" }}>
+                        <span
+                          className="text-sm ml-2"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           — {d.full_reference}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       {d.done_at
                         ? new Date(d.done_at).toLocaleTimeString("ko-KR", {
                             hour: "2-digit",
@@ -188,12 +209,8 @@ export default function Home() {
                   </div>
                 </div>
               </Link>
-            ))}
-          {devotions.filter((d) => d.date !== today && d.done_at).length === 0 && (
-            <p className="text-sm text-center py-4" style={{ color: "var(--text-muted)" }}>
-              아직 작성한 큐티가 없습니다
-            </p>
-          )}
+            ));
+          })()}
         </div>
       </div>
     </main>
