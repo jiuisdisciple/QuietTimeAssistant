@@ -85,3 +85,37 @@ export async function checkDevotion(
 
   return response.choices[0]?.message?.content || "검토를 수행할 수 없습니다.";
 }
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function chatWithQnA(
+  passageReference: string,
+  history: ChatMessage[]
+): Promise<string> {
+  const systemPrompt = `당신은 개혁신학(Reformed theology) 관점에서 성경 본문에 대한 질문에 답하는 도우미입니다.
+
+원칙:
+- 답변은 **짧고 간결하게** 핵심만 전달하세요 (2-5문장 권장)
+- 개혁신학의 고백(웨스트민스터, 하이델베르크 등)과 일치하는 관점을 유지하세요
+- 성경 본문에 근거해 답하고, 필요한 경우 관련 구절을 짧게 언급하세요
+- 확실하지 않은 것은 확실하지 않다고 말하세요
+- 영적 판단이나 정죄는 피하고, 지식·해석에 집중하세요
+- 한국어로 답변하세요
+
+현재 큐티 본문: ${passageReference}`;
+
+  const response = await openai.chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...history.map((m) => ({ role: m.role, content: m.content })),
+    ],
+    max_completion_tokens: 4000,
+    reasoning_effort: "minimal",
+  });
+
+  return response.choices[0]?.message?.content || "답변을 생성할 수 없습니다.";
+}

@@ -3,6 +3,8 @@
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FeedbackModal from "@/components/FeedbackModal";
+import ScripturePanel from "@/components/ScripturePanel";
+import ChatPopup from "@/components/ChatPopup";
 
 interface PassageData {
   full_reference: string;
@@ -25,6 +27,9 @@ export default function DevotionPage({
   const [devotion, setDevotion] = useState<DevotionData | null>(null);
   const [content, setContent] = useState("");
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [krvOpen, setKrvOpen] = useState(false);
+  const [esvOpen, setEsvOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackReport, setFeedbackReport] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
@@ -204,7 +209,7 @@ export default function DevotionPage({
       </div>
 
       {/* Date & Reference */}
-      <div className="mb-4">
+      <div className="mb-3">
         <h1 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           {date}
         </h1>
@@ -214,6 +219,61 @@ export default function DevotionPage({
           </p>
         )}
       </div>
+
+      {/* Quick Actions: K / E / QnA */}
+      {passage && (
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setKrvOpen(!krvOpen)}
+            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
+            style={{
+              background: krvOpen ? "var(--accent)" : "var(--bg-card)",
+              color: krvOpen ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            K
+          </button>
+          <button
+            onClick={() => setEsvOpen(!esvOpen)}
+            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
+            style={{
+              background: esvOpen ? "var(--accent)" : "var(--bg-card)",
+              color: esvOpen ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            E
+          </button>
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
+            style={{
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            QnA
+          </button>
+        </div>
+      )}
+
+      {/* Scripture Panels */}
+      {passage && (
+        <>
+          <ScripturePanel
+            reference={passage.full_reference}
+            version="KRV"
+            open={krvOpen}
+          />
+          <ScripturePanel
+            reference={passage.full_reference}
+            version="ESV"
+            open={esvOpen}
+          />
+        </>
+      )}
 
       {/* AI Summary (collapsible) */}
       {passage?.ai_summary && (
@@ -339,6 +399,15 @@ export default function DevotionPage({
         <FeedbackModal
           report={feedbackReport}
           onClose={() => setShowFeedback(false)}
+        />
+      )}
+
+      {/* QnA Chat Popup */}
+      {chatOpen && (
+        <ChatPopup
+          date={date}
+          passageReference={passage?.full_reference || "(본문 정보 없음)"}
+          onClose={() => setChatOpen(false)}
         />
       )}
     </main>
