@@ -209,107 +209,149 @@ export default function DevotionPage({
         </div>
       </div>
 
-      {/* Date & Reference + Quick Actions (inline) */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="min-w-0">
-          <h1
-            className="text-lg font-semibold"
-            style={{ color: "var(--text-primary)" }}
+      {/* Date (small, left aligned) */}
+      <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
+        {date}
+      </p>
+
+      {/* Passage Reference - big bold centered */}
+      {passage && (
+        <h1
+          className="text-2xl font-bold text-center mb-3"
+          style={{ color: "var(--accent)" }}
+        >
+          {passage.full_reference}
+        </h1>
+      )}
+
+      {/* Quick Action Buttons (centered, 4 buttons) */}
+      {passage && (
+        <div className="flex justify-center gap-2 mb-3">
+          {/* K button: closed book + 한 */}
+          <button
+            onClick={() => {
+              setKrvOpen(!krvOpen);
+              if (!krvOpen) {
+                setEsvOpen(false);
+                setSummaryOpen(false);
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+            style={{
+              background: krvOpen ? "var(--accent)" : "var(--bg-card)",
+              color: krvOpen ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+            title="개역한글"
           >
-            {date}
-          </h1>
-          {passage && (
-            <p
-              className="text-sm mt-1 truncate"
-              style={{ color: "var(--accent)" }}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {passage.full_reference}
-            </p>
-          )}
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+            </svg>
+            한
+          </button>
+          {/* E button: open book + E */}
+          <button
+            onClick={() => {
+              setEsvOpen(!esvOpen);
+              if (!esvOpen) {
+                setKrvOpen(false);
+                setSummaryOpen(false);
+              }
+            }}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+            style={{
+              background: esvOpen ? "var(--accent)" : "var(--bg-card)",
+              color: esvOpen ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+            title="ESV"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+            E
+          </button>
+          {/* AI button: sparkles icon */}
+          <button
+            onClick={() => {
+              setSummaryOpen(!summaryOpen);
+              if (!summaryOpen) {
+                setKrvOpen(false);
+                setEsvOpen(false);
+              }
+            }}
+            disabled={!passage.ai_summary}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: summaryOpen ? "var(--accent)" : "var(--bg-card)",
+              color: summaryOpen ? "#fff" : "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+            title="AI 개요"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M5.6 18.4l12.8-12.8" />
+            </svg>
+            AI
+          </button>
+          {/* QnA button: chat bubble */}
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex items-center justify-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            style={{
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+            title="QnA 채팅"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </button>
         </div>
-        {passage && (
-          <div className="flex gap-1 shrink-0">
-            {/* K button: closed book + 한 */}
-            <button
-              onClick={() => setKrvOpen(!krvOpen)}
-              className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
-              style={{
-                background: krvOpen ? "var(--accent)" : "var(--bg-card)",
-                color: krvOpen ? "#fff" : "var(--text-secondary)",
-                border: "1px solid var(--border)",
-              }}
-              title="개역한글"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-              </svg>
-              한
-            </button>
-            {/* E button: open book + E */}
-            <button
-              onClick={() => setEsvOpen(!esvOpen)}
-              className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
-              style={{
-                background: esvOpen ? "var(--accent)" : "var(--bg-card)",
-                color: esvOpen ? "#fff" : "var(--text-secondary)",
-                border: "1px solid var(--border)",
-              }}
-              title="ESV"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-              </svg>
-              E
-            </button>
-            {/* QnA button: chat bubble */}
-            <button
-              onClick={() => setChatOpen(true)}
-              className="flex items-center justify-center px-2.5 py-2 rounded-lg cursor-pointer transition-colors"
-              style={{
-                background: "var(--bg-card)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border)",
-              }}
-              title="QnA 채팅"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Scripture Panels */}
       {passage && (
@@ -327,45 +369,34 @@ export default function DevotionPage({
         </>
       )}
 
-      {/* AI Summary (collapsible) */}
-      {passage?.ai_summary && (
+      {/* AI Summary Panel */}
+      {passage?.ai_summary && summaryOpen && (
         <div
-          className="mb-4 rounded-xl overflow-hidden"
-          style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)" }}
+          className="mb-3 rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap"
+          style={{
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border)",
+            color: "var(--text-primary)",
+          }}
         >
-          <button
-            onClick={() => setSummaryOpen(!summaryOpen)}
-            className="w-full flex items-center justify-between p-3 text-sm cursor-pointer"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            <span>AI 개요</span>
-            <span className="text-xs">{summaryOpen ? "▲ 접기" : "▼ 펼치기"}</span>
-          </button>
-          {summaryOpen && (
-            <div
-              className="px-4 pb-4 text-sm leading-relaxed whitespace-pre-wrap"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {passage.ai_summary.split("\n").map((line, i) => {
-                if (line.startsWith("## ")) {
-                  return (
-                    <h3
-                      key={i}
-                      className="text-sm font-semibold mt-3 mb-1"
-                      style={{ color: "var(--accent)" }}
-                    >
-                      {line.replace("## ", "")}
-                    </h3>
-                  );
-                }
-                return (
-                  <p key={i} className="my-0.5">
-                    {line}
-                  </p>
-                );
-              })}
-            </div>
-          )}
+          {passage.ai_summary.split("\n").map((line, i) => {
+            if (line.startsWith("## ")) {
+              return (
+                <h3
+                  key={i}
+                  className="text-sm font-semibold mt-3 mb-1 first:mt-0"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {line.replace("## ", "")}
+                </h3>
+              );
+            }
+            return (
+              <p key={i} className="my-0.5">
+                {line}
+              </p>
+            );
+          })}
         </div>
       )}
 

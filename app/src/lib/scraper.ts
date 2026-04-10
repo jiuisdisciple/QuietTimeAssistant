@@ -30,19 +30,23 @@ function normalizeReference(
   // Case 1: title has the book abbreviation (e.g. title="롬", index="8:31-39")
   if (title && BOOK_ABBR_TO_FULL[title]) {
     const bookTitle = BOOK_ABBR_TO_FULL[title];
+    const chapterVerse = index.trim();
     return {
       bookTitle,
-      chapterVerse: index,
-      fullReference: `${bookTitle} ${index}`,
+      chapterVerse,
+      fullReference: `${bookTitle} ${chapterVerse}`,
     };
   }
 
-  // Case 2: title is empty, index contains full reference like "롬 8:31-39"
-  // Try to split off the book abbreviation from the start
+  // Case 2: title is empty, index contains full reference like
+  //   "롬 8:31-39" or "시73:1-28" (no space possible!)
+  // Split at the first digit: letters = abbreviation, rest = chapter:verse
   const trimmed = index.trim();
-  const match = trimmed.match(/^(\S+)\s+(.+)$/);
+  const match = trimmed.match(/^([^\d\s]+)\s*(\d.*)$/);
   if (match) {
-    const [, abbr, chapterVerse] = match;
+    const [, abbrRaw, chapterVerseRaw] = match;
+    const abbr = abbrRaw.trim();
+    const chapterVerse = chapterVerseRaw.trim();
     const bookTitle = BOOK_ABBR_TO_FULL[abbr] || abbr;
     return {
       bookTitle,

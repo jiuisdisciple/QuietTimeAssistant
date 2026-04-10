@@ -25,6 +25,40 @@ export async function GET(request: NextRequest) {
 
     if (cached.rows.length > 0) {
       const row = cached.rows[0];
+      // Detect bad cached reference: missing space between book name and chapter
+      // e.g. "시73:1-28" instead of "시편 73:1-28"
+      const looksBad =
+        !row.full_reference ||
+        !/\s\d/.test(row.full_reference) ||
+        row.book_title === "" ||
+        !row.book_title;
+
+      if (looksBad) {
+        // Re-fetch and overwrite
+        const fresh = await fetchTodayPassage(date);
+        if (fresh && /\s\d/.test(fresh.fullReference)) {
+          const updated = await sql`
+            UPDATE passages
+            SET book_title = ${fresh.bookTitle},
+                chapter_verse = ${fresh.chapterVerse},
+                full_reference = ${fresh.fullReference},
+                ai_summary = NULL
+            WHERE date = ${date}
+            RETURNING *
+          `;
+          const newRow = updated.rows[0];
+          // Generate new AI summary with correct reference
+          try {
+            const summary = await generateSummary(newRow.full_reference);
+            await sql`UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}`;
+            newRow.ai_summary = summary;
+          } catch (e) {
+            console.error("AI summary regeneration failed:", e);
+          }
+          return NextResponse.json(newRow);
+        }
+      }
+
       // If cached but missing AI summary, try to generate it now
       if (!row.ai_summary) {
         try {

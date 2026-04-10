@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Verse {
   verse: number;
@@ -23,23 +23,43 @@ export default function ScripturePanel({
   const [error, setError] = useState<string | null>(null);
   const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState(false);
+  const attemptCountRef = useRef(0);
+  const MAX_ATTEMPTS = 5;
+
+  // Reset when reference or version changes
+  useEffect(() => {
+    setVerses(null);
+    setError(null);
+    attemptCountRef.current = 0;
+  }, [reference, version]);
 
   useEffect(() => {
-    if (!open || verses || loading) return;
+    if (!open || verses || loading || error) return;
+    if (attemptCountRef.current >= MAX_ATTEMPTS) {
+      setError("여러 번 시도했지만 본문을 가져올 수 없습니다.");
+      return;
+    }
+    attemptCountRef.current += 1;
     setLoading(true);
-    setError(null);
     fetch(`/api/bible?ref=${encodeURIComponent(reference)}&version=${version}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok || data.error) {
+          setError(data.error || `오류 (${r.status})`);
           return;
         }
         setVerses(data.verses || []);
+        attemptCountRef.current = 0;
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
-  }, [open, reference, version, verses, loading]);
+  }, [open, reference, version, verses, loading, error]);
+
+  const handleRetry = () => {
+    attemptCountRef.current = 0;
+    setError(null);
+    setVerses(null);
+  };
 
   const toggleHighlight = (verseNum: number) => {
     setHighlighted((prev) => {
@@ -117,7 +137,22 @@ export default function ScripturePanel({
       {loading && (
         <p style={{ color: "var(--text-muted)" }}>본문 불러오는 중...</p>
       )}
-      {error && <p style={{ color: "var(--danger)" }}>오류: {error}</p>}
+      {error && (
+        <div>
+          <p style={{ color: "var(--danger)" }}>오류: {error}</p>
+          <button
+            onClick={handleRetry}
+            className="mt-2 px-3 py-1 rounded text-xs cursor-pointer"
+            style={{
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
       {verses && verses.length > 0 && (
         <div className="space-y-1">
           {verses.map((v) => {
