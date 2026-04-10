@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+import { getKSTDate } from "@/lib/date";
 
 export async function GET() {
   try {
-    // Get last 7 days of devotion timestamps
+    const today = getKSTDate(0);
+    const sixDaysAgo = getKSTDate(-6);
+
+    // Get last 7 days of devotion timestamps (inclusive)
     const timeline = await sql`
       SELECT date, done_at
       FROM devotions
-      WHERE date >= CURRENT_DATE - INTERVAL '6 days'
+      WHERE date >= ${sixDaysAgo} AND date <= ${today}
       ORDER BY date ASC
     `;
 
-    // Calculate streak
+    // Calculate streak against KST today
     const streak = await sql`
       WITH dates AS (
         SELECT date, ROW_NUMBER() OVER (ORDER BY date DESC) as rn
@@ -21,7 +25,7 @@ export async function GET() {
       )
       SELECT COUNT(*) as streak
       FROM dates
-      WHERE date = CURRENT_DATE - (rn - 1) * INTERVAL '1 day'
+      WHERE date = ${today}::date - (rn - 1) * INTERVAL '1 day'
     `;
 
     return NextResponse.json({

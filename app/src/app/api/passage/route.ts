@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary } from "@/lib/ai";
+import { getKSTDate } from "@/lib/date";
 
 export async function DELETE(request: NextRequest) {
   const date = request.nextUrl.searchParams.get("date");
@@ -14,8 +15,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const date =
-    request.nextUrl.searchParams.get("date") ||
-    new Date().toISOString().split("T")[0];
+    request.nextUrl.searchParams.get("date") || getKSTDate(0);
 
   try {
     // Check if we already have this passage cached

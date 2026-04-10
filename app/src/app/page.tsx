@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { getKSTDate } from "@/lib/date";
 
 const TimeChart = dynamic(() => import("@/components/TimeChart"), {
   ssr: false,
@@ -38,12 +39,8 @@ export default function Home() {
   const [showChart, setShowChart] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const today = new Date().toISOString().split("T")[0];
-  const tomorrow = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
-  })();
+  const today = getKSTDate(0);
+  const tomorrow = getKSTDate(1);
 
   useEffect(() => {
     Promise.all([

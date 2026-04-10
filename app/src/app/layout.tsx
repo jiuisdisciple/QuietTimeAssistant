@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
@@ -8,8 +8,18 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "QuietTime Assistant",
+  title: "QuietTime",
   description: "매일의 큐티 습관을 돕는 노트 앱",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "QuietTime",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1a1a2e",
 };
 
 export default function RootLayout({

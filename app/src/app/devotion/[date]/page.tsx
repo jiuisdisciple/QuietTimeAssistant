@@ -5,6 +5,7 @@ import Link from "next/link";
 import FeedbackModal from "@/components/FeedbackModal";
 import ScripturePanel from "@/components/ScripturePanel";
 import ChatPopup from "@/components/ChatPopup";
+import { getKSTDate } from "@/lib/date";
 
 interface PassageData {
   full_reference: string;
@@ -39,7 +40,7 @@ export default function DevotionPage({
   const [loading, setLoading] = useState(true);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getKSTDate(0);
   const isToday = date === today;
   const isFuture = date > today;
   const isReadOnly = !isToday || isDone;
@@ -208,56 +209,107 @@ export default function DevotionPage({
         </div>
       </div>
 
-      {/* Date & Reference */}
-      <div className="mb-3">
-        <h1 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-          {date}
-        </h1>
+      {/* Date & Reference + Quick Actions (inline) */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="min-w-0">
+          <h1
+            className="text-lg font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {date}
+          </h1>
+          {passage && (
+            <p
+              className="text-sm mt-1 truncate"
+              style={{ color: "var(--accent)" }}
+            >
+              {passage.full_reference}
+            </p>
+          )}
+        </div>
         {passage && (
-          <p className="text-sm mt-1" style={{ color: "var(--accent)" }}>
-            {passage.full_reference}
-          </p>
+          <div className="flex gap-1 shrink-0">
+            {/* K button: closed book + 한 */}
+            <button
+              onClick={() => setKrvOpen(!krvOpen)}
+              className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+              style={{
+                background: krvOpen ? "var(--accent)" : "var(--bg-card)",
+                color: krvOpen ? "#fff" : "var(--text-secondary)",
+                border: "1px solid var(--border)",
+              }}
+              title="개역한글"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+              </svg>
+              한
+            </button>
+            {/* E button: open book + E */}
+            <button
+              onClick={() => setEsvOpen(!esvOpen)}
+              className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+              style={{
+                background: esvOpen ? "var(--accent)" : "var(--bg-card)",
+                color: esvOpen ? "#fff" : "var(--text-secondary)",
+                border: "1px solid var(--border)",
+              }}
+              title="ESV"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              E
+            </button>
+            {/* QnA button: chat bubble */}
+            <button
+              onClick={() => setChatOpen(true)}
+              className="flex items-center justify-center px-2.5 py-2 rounded-lg cursor-pointer transition-colors"
+              style={{
+                background: "var(--bg-card)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border)",
+              }}
+              title="QnA 채팅"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
-
-      {/* Quick Actions: K / E / QnA */}
-      {passage && (
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => setKrvOpen(!krvOpen)}
-            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
-            style={{
-              background: krvOpen ? "var(--accent)" : "var(--bg-card)",
-              color: krvOpen ? "#fff" : "var(--text-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            K
-          </button>
-          <button
-            onClick={() => setEsvOpen(!esvOpen)}
-            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
-            style={{
-              background: esvOpen ? "var(--accent)" : "var(--bg-card)",
-              color: esvOpen ? "#fff" : "var(--text-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            E
-          </button>
-          <button
-            onClick={() => setChatOpen(true)}
-            className="flex-1 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
-            style={{
-              background: "var(--bg-card)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            QnA
-          </button>
-        </div>
-      )}
 
       {/* Scripture Panels */}
       {passage && (
