@@ -3,6 +3,15 @@ import { sql } from "@vercel/postgres";
 import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary } from "@/lib/ai";
 
+export async function DELETE(request: NextRequest) {
+  const date = request.nextUrl.searchParams.get("date");
+  if (!date) {
+    return NextResponse.json({ error: "date required" }, { status: 400 });
+  }
+  await sql`DELETE FROM passages WHERE date = ${date}`;
+  return NextResponse.json({ deleted: date });
+}
+
 export async function GET(request: NextRequest) {
   const date =
     request.nextUrl.searchParams.get("date") ||
