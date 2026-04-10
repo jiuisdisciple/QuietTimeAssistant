@@ -32,7 +32,8 @@ export async function generateSummary(
         content: `오늘의 큐티 본문: ${passageReference}\n\n이 본문에 대한 개요를 작성해 주세요.`,
       },
     ],
-    max_completion_tokens: 2000,
+    max_completion_tokens: 8000,
+    reasoning_effort: "minimal",
   });
 
   return response.choices[0]?.message?.content || "요약을 생성할 수 없습니다.";
@@ -70,7 +71,8 @@ export async function checkDevotion(
         content: `본문: ${passageReference}\n\n큐티 내용:\n${devotionContent}`,
       },
     ],
-    max_completion_tokens: 1500,
+    max_completion_tokens: 6000,
+    reasoning_effort: "minimal",
   });
 
   return response.choices[0]?.message?.content || "검토를 수행할 수 없습니다.";

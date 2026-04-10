@@ -23,9 +23,40 @@ const BOOK_ABBR_TO_FULL: Record<string, string> = {
   유: "유다서", 계: "요한계시록",
 };
 
-function normalizeReference(title: string, index: string): string {
-  const fullName = BOOK_ABBR_TO_FULL[title] || title;
-  return `${fullName} ${index}`;
+function normalizeReference(
+  title: string,
+  index: string
+): { bookTitle: string; chapterVerse: string; fullReference: string } {
+  // Case 1: title has the book abbreviation (e.g. title="롬", index="8:31-39")
+  if (title && BOOK_ABBR_TO_FULL[title]) {
+    const bookTitle = BOOK_ABBR_TO_FULL[title];
+    return {
+      bookTitle,
+      chapterVerse: index,
+      fullReference: `${bookTitle} ${index}`,
+    };
+  }
+
+  // Case 2: title is empty, index contains full reference like "롬 8:31-39"
+  // Try to split off the book abbreviation from the start
+  const trimmed = index.trim();
+  const match = trimmed.match(/^(\S+)\s+(.+)$/);
+  if (match) {
+    const [, abbr, chapterVerse] = match;
+    const bookTitle = BOOK_ABBR_TO_FULL[abbr] || abbr;
+    return {
+      bookTitle,
+      chapterVerse,
+      fullReference: `${bookTitle} ${chapterVerse}`,
+    };
+  }
+
+  // Fallback
+  return {
+    bookTitle: title || "",
+    chapterVerse: trimmed,
+    fullReference: trimmed,
+  };
 }
 
 export interface PassageInfo {
@@ -54,13 +85,13 @@ export async function fetchTodayPassage(
     }
 
     const { title, index } = data.passage;
-    const fullReference = normalizeReference(title, index);
+    const normalized = normalizeReference(title || "", index || "");
 
     return {
       date,
-      bookTitle: BOOK_ABBR_TO_FULL[title] || title,
-      chapterVerse: index,
-      fullReference,
+      bookTitle: normalized.bookTitle,
+      chapterVerse: normalized.chapterVerse,
+      fullReference: normalized.fullReference,
     };
   } catch (error) {
     console.error("Failed to fetch passage:", error);

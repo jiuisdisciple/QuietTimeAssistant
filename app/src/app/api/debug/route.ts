@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       const response = await openai.chat.completions.create({
         model: "gpt-5",
         messages: [{ role: "user", content: "Say 'hello' in Korean" }],
-        max_completion_tokens: 100,
+        max_completion_tokens: 2000,
+        reasoning_effort: "minimal",
       });
       results.openai_test = {
         ok: true,
