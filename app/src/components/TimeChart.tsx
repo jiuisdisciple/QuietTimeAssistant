@@ -10,16 +10,27 @@ import {
   ResponsiveContainer,
   Dot,
 } from "recharts";
+import { getKSTDate } from "@/lib/date";
 
 interface TimelineEntry {
   date: string;
   done_at: string | null;
 }
 
+// Convert UTC timestamp to KST decimal hour (0-24)
 function getHourFromTimestamp(timestamp: string | null): number | null {
   if (!timestamp) return null;
   const date = new Date(timestamp);
-  return date.getHours() + date.getMinutes() / 60;
+  // Format in KST timezone
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(date);
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
+  return hour + minute / 60;
 }
 
 function getColor(hour: number | null): string {
@@ -59,12 +70,11 @@ export default function TimeChart({
 }: {
   timeline: TimelineEntry[];
 }) {
-  // Generate last 7 days
+  // Generate last 7 days in KST
   const days: { date: string; label: string; hour: number | null }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = getKSTDate(-i); // "2026-04-11", "2026-04-10", ...
+    const [, month, day] = dateStr.split("-").map(Number);
     // DB may return date as ISO string like "2026-04-10T00:00:00.000Z" — normalize
     const entry = timeline.find(
       (t) => String(t.date).slice(0, 10) === dateStr
@@ -72,7 +82,7 @@ export default function TimeChart({
     const hour = entry ? getHourFromTimestamp(entry.done_at) : null;
     days.push({
       date: dateStr,
-      label: `${d.getMonth() + 1}/${d.getDate()}`,
+      label: `${month}/${day}`,
       hour,
     });
   }
