@@ -15,38 +15,73 @@ export async function GET(request: NextRequest) {
     `;
 
     if (cached.rows.length > 0) {
-      return NextResponse.json(cached.rows[0]);
+      const row = cached.rows[0];
+      // If cached but missing AI summary, try to generate it now
+      if (!row.ai_summary) {
+        try {
+          const summary = await generateSummary(row.full_reference);
+          await sql`
+            UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}
+          `;
+          row.ai_summary = summary;
+        } catch (e) {
+          console.error("AI summary generation failed:", e);
+        }
+      }
+      return NextResponse.json(row);
     }
 
-    // Fetch from API
+    // Fetch from cdmb API
     const passage = await fetchTodayPassage(date);
     if (!passage) {
       return NextResponse.json(
-        { error: "본문을 가져올 수 없습니다" },
+        { error: "오늘의 본문을 아직 가져올 수 없습니다" },
         { status: 404 }
       );
     }
 
-    // Generate AI summary
-    const aiSummary = await generateSummary(passage.fullReference);
+    // Save passage first (without AI summary) so data isn't lost if AI fails
+    let savedRow;
+    try {
+      const result = await sql`
+        INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
+        VALUES (${date}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, NULL)
+        ON CONFLICT (date) DO UPDATE SET
+          book_title = ${passage.bookTitle},
+          chapter_verse = ${passage.chapterVerse},
+          full_reference = ${passage.fullReference}
+        RETURNING *
+      `;
+      savedRow = result.rows[0];
+    } catch (dbError) {
+      console.error("DB insert error:", dbError);
+      // If DB fails, still return the fetched passage
+      return NextResponse.json({
+        date,
+        book_title: passage.bookTitle,
+        chapter_verse: passage.chapterVerse,
+        full_reference: passage.fullReference,
+        ai_summary: null,
+      });
+    }
 
-    // Cache in DB
-    const result = await sql`
-      INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
-      VALUES (${date}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, ${aiSummary})
-      ON CONFLICT (date) DO UPDATE SET
-        book_title = ${passage.bookTitle},
-        chapter_verse = ${passage.chapterVerse},
-        full_reference = ${passage.fullReference},
-        ai_summary = ${aiSummary}
-      RETURNING *
-    `;
+    // Try to generate AI summary (non-blocking failure)
+    try {
+      const aiSummary = await generateSummary(passage.fullReference);
+      await sql`
+        UPDATE passages SET ai_summary = ${aiSummary} WHERE date = ${date}
+      `;
+      savedRow.ai_summary = aiSummary;
+    } catch (aiError) {
+      console.error("AI summary generation failed:", aiError);
+      // Keep going — passage info is already saved
+    }
 
-    return NextResponse.json(result.rows[0]);
+    return NextResponse.json(savedRow);
   } catch (error) {
     console.error("Passage API error:", error);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다" },
+      { error: "서버 오류가 발생했습니다", detail: String(error) },
       { status: 500 }
     );
   }

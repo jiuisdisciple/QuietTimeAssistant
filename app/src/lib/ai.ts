@@ -2,11 +2,13 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const MODEL = "gpt-5";
+
 export async function generateSummary(
   passageReference: string
 ): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: MODEL,
     messages: [
       {
         role: "system",
@@ -30,8 +32,7 @@ export async function generateSummary(
         content: `오늘의 큐티 본문: ${passageReference}\n\n이 본문에 대한 개요를 작성해 주세요.`,
       },
     ],
-    temperature: 0.7,
-    max_tokens: 1500,
+    max_completion_tokens: 2000,
   });
 
   return response.choices[0]?.message?.content || "요약을 생성할 수 없습니다.";
@@ -42,7 +43,7 @@ export async function checkDevotion(
   devotionContent: string
 ): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: MODEL,
     messages: [
       {
         role: "system",
@@ -69,8 +70,7 @@ export async function checkDevotion(
         content: `본문: ${passageReference}\n\n큐티 내용:\n${devotionContent}`,
       },
     ],
-    temperature: 0.3,
-    max_tokens: 1000,
+    max_completion_tokens: 1500,
   });
 
   return response.choices[0]?.message?.content || "검토를 수행할 수 없습니다.";

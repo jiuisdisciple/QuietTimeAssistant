@@ -62,7 +62,7 @@ export default function DevotionPage({
   // Auto-save (3 seconds after typing stops)
   const autoSave = useCallback(
     (text: string) => {
-      if (isReadOnly || !passage) return;
+      if (isReadOnly) return;
       setSaving(true);
       fetch("/api/devotion", {
         method: "POST",
@@ -70,7 +70,7 @@ export default function DevotionPage({
         body: JSON.stringify({
           date,
           content: text,
-          passage_reference: passage.full_reference,
+          passage_reference: passage?.full_reference || null,
           done: false,
         }),
       })
@@ -92,22 +92,27 @@ export default function DevotionPage({
 
   // Done
   const handleDone = async () => {
-    if (!passage) return;
     setSaving(true);
     try {
-      await fetch("/api/devotion", {
+      const res = await fetch("/api/devotion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date,
           content,
-          passage_reference: passage.full_reference,
+          passage_reference: passage?.full_reference || null,
           done: true,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`저장 실패: ${err.error || "알 수 없는 오류"}`);
+        return;
+      }
       setIsDone(true);
     } catch (e) {
       console.error(e);
+      alert(`저장 중 오류: ${e}`);
     } finally {
       setSaving(false);
     }
@@ -115,7 +120,7 @@ export default function DevotionPage({
 
   // Feedback
   const handleFeedback = async () => {
-    if (!passage || !content.trim()) return;
+    if (!content.trim()) return;
     setFeedbackLoading(true);
     try {
       const res = await fetch("/api/feedback", {
@@ -124,14 +129,20 @@ export default function DevotionPage({
         body: JSON.stringify({
           date,
           content,
-          passage_reference: passage.full_reference,
+          passage_reference: passage?.full_reference || "(본문 정보 없음)",
         }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`피드백 실패: ${err.error || "알 수 없는 오류"}`);
+        return;
+      }
       const data = await res.json();
       setFeedbackReport(data.report);
       setShowFeedback(true);
     } catch (e) {
       console.error(e);
+      alert(`피드백 중 오류: ${e}`);
     } finally {
       setFeedbackLoading(false);
     }
