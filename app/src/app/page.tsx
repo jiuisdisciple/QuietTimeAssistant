@@ -34,6 +34,7 @@ interface Stats {
 export default function Home() {
   const [todayPassage, setTodayPassage] = useState<Passage | null>(null);
   const [tomorrowPassage, setTomorrowPassage] = useState<Passage | null>(null);
+  const [tomorrowLoading, setTomorrowLoading] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [showChart, setShowChart] = useState(false);
@@ -45,7 +46,8 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       fetch(`/api/passage?date=${today}`).then((r) => r.json()),
-      fetch(`/api/passage?date=${tomorrow}`).then((r) => r.json()),
+      // Tomorrow: lazy mode — only use DB cache, don't fetch externally or generate AI
+      fetch(`/api/passage?date=${tomorrow}&lazy=1`).then((r) => r.json()),
       fetch("/api/devotion?limit=30").then((r) => r.json()),
       fetch("/api/stats").then((r) => r.json()),
     ])
@@ -58,6 +60,28 @@ export default function Home() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [today, tomorrow]);
+
+  const handleFetchTomorrow = async () => {
+    setTomorrowLoading(true);
+    try {
+      const res = await fetch(`/api/passage?date=${tomorrow}`);
+      const data = await res.json();
+      if (!data.error) {
+        setTomorrowPassage(data);
+      } else {
+        alert(
+          data.error === "not_cached"
+            ? "내일 본문을 아직 가져올 수 없습니다"
+            : data.error
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      alert(`오류: ${e}`);
+    } finally {
+      setTomorrowLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -110,7 +134,7 @@ export default function Home() {
       )}
 
       {/* Tomorrow Button (faded, preview) */}
-      {tomorrowPassage && (
+      {tomorrowPassage ? (
         <Link href={`/devotion/${tomorrow}`}>
           <div
             className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-50"
@@ -137,6 +161,28 @@ export default function Home() {
             </div>
           </div>
         </Link>
+      ) : (
+        <button
+          onClick={handleFetchTomorrow}
+          disabled={tomorrowLoading}
+          className="mb-3 w-full p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60 disabled:opacity-40 disabled:cursor-wait"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px dashed var(--border)",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <div className="flex items-center justify-center gap-2 text-sm">
+            {tomorrowLoading ? (
+              <>불러오는 중...</>
+            ) : (
+              <>
+                <span>📖</span>
+                <span>내일 본문 미리 불러오기 ({tomorrow})</span>
+              </>
+            )}
+          </div>
+        </button>
       )}
 
       {/* Today Button */}

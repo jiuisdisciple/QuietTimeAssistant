@@ -14,8 +14,8 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const date =
-    request.nextUrl.searchParams.get("date") || getKSTDate(0);
+  const date = request.nextUrl.searchParams.get("date") || getKSTDate(0);
+  const lazy = request.nextUrl.searchParams.get("lazy") === "1";
 
   try {
     // Check if we already have this passage cached
@@ -72,6 +72,14 @@ export async function GET(request: NextRequest) {
         }
       }
       return NextResponse.json(row);
+    }
+
+    // Lazy mode: don't fetch externally, don't generate AI
+    if (lazy) {
+      return NextResponse.json(
+        { error: "not_cached" },
+        { status: 404 }
+      );
     }
 
     // Fetch from cdmb API

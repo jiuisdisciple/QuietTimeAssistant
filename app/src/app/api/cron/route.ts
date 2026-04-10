@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary } from "@/lib/ai";
+import { getKSTDate } from "@/lib/date";
 
 async function ensurePassage(dateStr: string) {
   // Skip if already fetched with summary
@@ -50,14 +51,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get today's date in KST
-    const kstNow = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })
-    );
-    const today = kstNow.toISOString().split("T")[0];
-    const tomorrowDate = new Date(kstNow);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrow = tomorrowDate.toISOString().split("T")[0];
+    const today = getKSTDate(0);
+    const tomorrow = getKSTDate(1);
 
     // Fetch both today and tomorrow in parallel
     const [todayResult, tomorrowResult] = await Promise.all([
