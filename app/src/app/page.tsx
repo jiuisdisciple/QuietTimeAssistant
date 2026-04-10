@@ -32,27 +32,35 @@ interface Stats {
 
 export default function Home() {
   const [todayPassage, setTodayPassage] = useState<Passage | null>(null);
+  const [tomorrowPassage, setTomorrowPassage] = useState<Passage | null>(null);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [showChart, setShowChart] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().split("T")[0];
+  const tomorrow = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  })();
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/passage?date=${today}`).then((r) => r.json()),
+      fetch(`/api/passage?date=${tomorrow}`).then((r) => r.json()),
       fetch("/api/devotion?limit=30").then((r) => r.json()),
       fetch("/api/stats").then((r) => r.json()),
     ])
-      .then(([passage, devs, statsData]) => {
+      .then(([passage, tomPassage, devs, statsData]) => {
         if (!passage.error) setTodayPassage(passage);
+        if (!tomPassage.error) setTomorrowPassage(tomPassage);
         if (Array.isArray(devs)) setDevotions(devs);
         if (!statsData.error) setStats(statsData);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [today]);
+  }, [today, tomorrow]);
 
   if (loading) {
     return (
@@ -102,6 +110,36 @@ export default function Home() {
             {stats.streak}일 연속 큐티
           </span>
         </div>
+      )}
+
+      {/* Tomorrow Button (faded, preview) */}
+      {tomorrowPassage && (
+        <Link href={`/devotion/${tomorrow}`}>
+          <div
+            className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-50"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px dashed var(--border)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  내일 미리보기
+                </p>
+                <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                  {tomorrow}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
+                  {tomorrowPassage.full_reference}
+                </p>
+              </div>
+              <span className="text-lg" style={{ color: "var(--text-muted)" }}>
+                &rarr;
+              </span>
+            </div>
+          </div>
+        </Link>
       )}
 
       {/* Today Button */}

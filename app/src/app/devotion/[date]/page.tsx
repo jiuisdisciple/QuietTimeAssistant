@@ -36,6 +36,7 @@ export default function DevotionPage({
 
   const today = new Date().toISOString().split("T")[0];
   const isToday = date === today;
+  const isFuture = date > today;
   const isReadOnly = !isToday || isDone;
 
   // Load data
@@ -258,7 +259,20 @@ export default function DevotionPage({
 
       {/* Editor / Read-only view */}
       <div className="flex-1 flex flex-col mb-4 min-h-0">
-        {isReadOnly ? (
+        {isFuture ? (
+          <div
+            className="flex-1 flex items-center justify-center p-4 rounded-xl text-sm text-center"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px dashed var(--border)",
+              color: "var(--text-muted)",
+            }}
+          >
+            내일의 큐티는 아직 작성할 수 없습니다.
+            <br />
+            위의 AI 개요를 펼쳐서 미리 본문을 묵상해보세요.
+          </div>
+        ) : isReadOnly ? (
           <div
             className="flex-1 p-4 rounded-xl text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto"
             style={{
