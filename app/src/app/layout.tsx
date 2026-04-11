@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Noto_Serif_KR, Gowun_Dodum } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,13 +53,42 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
+        baseTheme: dark,
         variables: {
           colorPrimary: "#7c8cf0",
           colorBackground: "#1a1a2e",
           colorInputBackground: "#253352",
-          colorInputText: "#e0e0e0",
-          colorText: "#e0e0e0",
-          colorTextSecondary: "#a0a0b0",
+          colorInputText: "#e8e8ec",
+          colorText: "#e8e8ec",
+          colorTextSecondary: "#b4b4c0",
+          colorDanger: "#ef4444",
+          colorSuccess: "#10b981",
+          borderRadius: "0.5rem",
+        },
+        elements: {
+          card: {
+            background: "#1a1a2e",
+            border: "1px solid #2a2a42",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+          },
+          headerTitle: { color: "#f5f5fa" },
+          headerSubtitle: { color: "#b4b4c0" },
+          socialButtonsBlockButton: {
+            background: "#253352",
+            border: "1px solid #3a4a70",
+            color: "#e8e8ec",
+          },
+          socialButtonsBlockButton__google: { color: "#e8e8ec" },
+          formFieldLabel: { color: "#e8e8ec" },
+          formFieldInput: {
+            background: "#253352",
+            border: "1px solid #3a4a70",
+            color: "#e8e8ec",
+          },
+          footerActionText: { color: "#b4b4c0" },
+          footerActionLink: { color: "#7c8cf0" },
+          dividerLine: { background: "#3a4a70" },
+          dividerText: { color: "#b4b4c0" },
         },
       }}
     >

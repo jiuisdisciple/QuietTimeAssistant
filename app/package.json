@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.12",
+    "@clerk/themes": "^2.4.57",
     "@vercel/postgres": "^0.10.0",
     "next": "16.2.2",
     "openai": "^6.33.0",
