@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/cron", // cron needs to run without user auth
+  "/api/init", // one-time DB setup, idempotent
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
