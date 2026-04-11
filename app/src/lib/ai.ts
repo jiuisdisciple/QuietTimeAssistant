@@ -3,6 +3,69 @@ import OpenAI from "openai";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MODEL = "gpt-5";
+const NANO_MODEL = "gpt-4.1-nano";
+
+// Normalize free-form Korean/English Bible references into the canonical
+// "풀책이름 장:시작절-끝절" format that our parseReference + bolls.life
+// pipeline understands. Returns null if normalization fails — callers
+// should fall back to the raw input.
+export async function normalizeReference(
+  userInput: string
+): Promise<string | null> {
+  const system = `You convert free-form Korean/English Bible references into a canonical format for a verse lookup API.
+
+Canonical format: "<한국어 풀 책이름> <장번호>:<시작절>-<끝절>"
+
+Full Korean book names (use exactly these):
+창세기, 출애굽기, 레위기, 민수기, 신명기, 여호수아, 사사기, 룻기, 사무엘상, 사무엘하, 열왕기상, 열왕기하, 역대상, 역대하, 에스라, 느헤미야, 에스더, 욥기, 시편, 잠언, 전도서, 아가, 이사야, 예레미야, 예레미야애가, 에스겔, 다니엘, 호세아, 요엘, 아모스, 오바댜, 요나, 미가, 나훔, 하박국, 스바냐, 학개, 스가랴, 말라기, 마태복음, 마가복음, 누가복음, 요한복음, 사도행전, 로마서, 고린도전서, 고린도후서, 갈라디아서, 에베소서, 빌립보서, 골로새서, 데살로니가전서, 데살로니가후서, 디모데전서, 디모데후서, 디도서, 빌레몬서, 히브리서, 야고보서, 베드로전서, 베드로후서, 요한일서, 요한이서, 요한삼서, 유다서, 요한계시록
+
+Rules:
+- Always use the FULL Korean book name. Expand abbreviations (빌 → 빌립보서, 시 → 시편, 롬 → 로마서, etc.) and translate English names (Phil → 빌립보서).
+- If no verse is specified (e.g. "1장" or "3"), output "1:1-999" to mean the whole chapter (999 is a sentinel).
+- If only a single verse is specified (e.g. "3:16"), output "3:16-16".
+- Output EXACTLY the canonical string — no quotes, no explanation, no trailing punctuation.
+- If the input is unrecognizable as a Bible reference, output the literal string: INVALID
+
+Examples:
+Input: 빌립보서 1장
+Output: 빌립보서 1:1-999
+
+Input: 빌 1:1-10
+Output: 빌립보서 1:1-10
+
+Input: 시 73:1-28
+Output: 시편 73:1-28
+
+Input: 요 3:16
+Output: 요한복음 3:16-16
+
+Input: 로마서 8장 31-39절
+Output: 로마서 8:31-39
+
+Input: Phil 2
+Output: 빌립보서 2:1-999
+
+Input: hello world
+Output: INVALID`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: NANO_MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userInput },
+      ],
+      max_tokens: 60,
+      temperature: 0,
+    });
+    const raw = response.choices[0]?.message?.content?.trim() || "";
+    if (!raw || raw === "INVALID") return null;
+    return raw;
+  } catch (e) {
+    console.error("normalizeReference failed:", e);
+    return null;
+  }
+}
 
 export async function generateSummary(
   passageReference: string

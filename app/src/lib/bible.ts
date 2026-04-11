@@ -91,18 +91,47 @@ export interface ParsedReference {
 }
 
 // Parse "로마서 8:31-39" or "시편 73:1-28" or "창세기 1:1"
-// Also handles no-space variants like "시편73:1-28" or abbreviations "시73:1-28"
+// Also handles:
+//  - No-space variants: "시편73:1-28", "시73:1-28" (abbreviation)
+//  - Whole-chapter display form: "빌립보서 1장" → treated as 1:1-999
+//  - Whole-chapter with verse range: "빌립보서 1장 1-10절" → 1:1-10
 export function parseReference(reference: string): ParsedReference | null {
   const trimmed = reference.trim();
-  // Match: book name (letters) + optional space + chapter:verse[-endVerse]
-  const match = trimmed.match(/^([^\d\s]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
-  if (!match) return null;
 
-  const [, bookNameRaw, chapter, startVerse, endVerse] = match;
+  // Pattern A: standard "book ch:start[-end]"
+  let match = trimmed.match(/^([^\d\s]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
+  if (match) {
+    const [, bookNameRaw, chapter, startVerse, endVerse] = match;
+    return buildParsed(bookNameRaw, chapter, startVerse, endVerse);
+  }
+
+  // Pattern B: "book ch장" or "book ch장 start[-end]절" (whole chapter form)
+  match = trimmed.match(
+    /^([^\d\s]+)\s*(\d+)장(?:\s*(\d+)(?:\s*-\s*(\d+))?절?)?$/
+  );
+  if (match) {
+    const [, bookNameRaw, chapter, startVerse, endVerse] = match;
+    return buildParsed(
+      bookNameRaw,
+      chapter,
+      startVerse || "1",
+      endVerse || (startVerse ? undefined : "999")
+    );
+  }
+
+  return null;
+}
+
+function buildParsed(
+  bookNameRaw: string,
+  chapter: string,
+  startVerse: string,
+  endVerse: string | undefined
+): ParsedReference | null {
   const bookName = bookNameRaw.trim();
-  // Try full name first, then abbreviation fallback
   const bookId =
-    BOOK_NAME_TO_ID[bookName] || BOOK_NAME_TO_ID[BOOK_ABBR_FALLBACK[bookName] || ""];
+    BOOK_NAME_TO_ID[bookName] ||
+    BOOK_NAME_TO_ID[BOOK_ABBR_FALLBACK[bookName] || ""];
   if (!bookId) return null;
 
   return {

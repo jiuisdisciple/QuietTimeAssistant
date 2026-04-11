@@ -5,6 +5,7 @@ import { useState } from "react";
 interface ManualPassageModalProps {
   date: string;
   label: string; // "오늘" or "내일"
+  initialReference?: string; // when provided → edit mode
   onClose: () => void;
   onSaved: () => void;
 }
@@ -12,10 +13,12 @@ interface ManualPassageModalProps {
 export default function ManualPassageModal({
   date,
   label,
+  initialReference,
   onClose,
   onSaved,
 }: ManualPassageModalProps) {
-  const [reference, setReference] = useState("");
+  const isEdit = !!initialReference;
+  const [reference, setReference] = useState(initialReference || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,7 +64,7 @@ export default function ManualPassageModal({
             className="text-base font-semibold"
             style={{ color: "var(--text-primary)" }}
           >
-            {label}의 본문 직접 추가
+            {label}의 본문 {isEdit ? "수정" : "직접 추가"}
           </h2>
           <button
             onClick={onClose}
@@ -79,10 +82,11 @@ export default function ManualPassageModal({
             className="text-sm mb-3"
             style={{ color: "var(--text-secondary)" }}
           >
-            {label}({date})의 본문을 직접 추가하시겠습니까?
+            {label}({date})의 본문을{" "}
+            {isEdit ? "수정" : "직접 추가"}하시겠습니까?
             <br />
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-              예) 시편 73:1-28, 로마서 8:31-39
+              예) 시편 73:1-28, 빌립보서 1장, 로마서 8:31-39
             </span>
           </p>
 

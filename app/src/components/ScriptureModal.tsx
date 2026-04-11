@@ -183,13 +183,13 @@ export default function ScriptureModal({
                     해당 날짜의 본문이 아직 업로드되지 않았습니다.
                     <br />
                     <a
-                      href="https://cdmb.link"
+                      href="https://cdmb.link/qt/"
                       target="_blank"
                       rel="noreferrer"
                       className="underline"
                       style={{ color: "var(--accent)" }}
                     >
-                      cdmb.link
+                      cdmb.link/qt/
                     </a>
                     를 직접 확인하세요.
                   </p>

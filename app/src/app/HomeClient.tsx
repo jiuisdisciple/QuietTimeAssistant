@@ -52,7 +52,7 @@ export default function HomeClient({
   const [loading, setLoading] = useState(true);
   const [font, setFont] = useState<FontChoice>("sans");
   const [manualEntry, setManualEntry] = useState<
-    { date: string; label: string } | null
+    { date: string; label: string; initialReference?: string } | null
   >(null);
 
   const today = getKSTDate(0);
@@ -185,12 +185,41 @@ export default function HomeClient({
             오늘의 본문
           </p>
           {todayPassage?.full_reference ? (
-            <p
-              className="text-base font-medium mt-0.5"
-              style={{ color: "var(--accent)" }}
-            >
-              {todayPassage.full_reference}
-            </p>
+            <div className="mt-0.5 flex items-center justify-center gap-2">
+              <p
+                className="text-base font-medium"
+                style={{ color: "var(--accent)" }}
+              >
+                {todayPassage.full_reference}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualEntry({
+                    date: today,
+                    label: "오늘",
+                    initialReference: todayPassage.full_reference,
+                  })
+                }
+                className="p-1 rounded cursor-pointer hover:opacity-80"
+                style={{ color: "var(--text-muted)" }}
+                title="본문 수정"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+            </div>
           ) : (
             <button
               type="button"
@@ -219,12 +248,41 @@ export default function HomeClient({
             내일의 본문
           </p>
           {tomorrowPassage?.full_reference ? (
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {tomorrowPassage.full_reference}
-            </p>
+            <div className="mt-0.5 flex items-center justify-center gap-2">
+              <p
+                className="text-xs"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {tomorrowPassage.full_reference}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualEntry({
+                    date: tomorrow,
+                    label: "내일",
+                    initialReference: tomorrowPassage.full_reference,
+                  })
+                }
+                className="p-1 rounded cursor-pointer hover:opacity-80"
+                style={{ color: "var(--text-muted)" }}
+                title="본문 수정"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+            </div>
           ) : (
             <button
               type="button"
@@ -419,6 +477,7 @@ export default function HomeClient({
         <ManualPassageModal
           date={manualEntry.date}
           label={manualEntry.label}
+          initialReference={manualEntry.initialReference}
           onClose={() => setManualEntry(null)}
           onSaved={() => refetchPassage(manualEntry.date)}
         />

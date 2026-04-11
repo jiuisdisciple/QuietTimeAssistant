@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { fetchTodayPassage } from "@/lib/scraper";
-import { generateSummary } from "@/lib/ai";
+import { generateSummary, normalizeReference } from "@/lib/ai";
 import { getKSTDate } from "@/lib/date";
 import { parseReference } from "@/lib/bible";
 import { requireApprovedUser } from "@/lib/auth";
@@ -36,9 +36,14 @@ export async function POST(request: NextRequest) {
 
     const trimmed = reference.trim();
 
-    // Try to parse into canonical book_title / chapter_verse so the Bible
-    // viewer can still resolve it. Fall back to raw string if unparseable.
-    const parsed = parseReference(trimmed);
+    // Step 1: ask a cheap LLM to canonicalize free-form user input
+    // (e.g. "빌립보서 1장" → "빌립보서 1:1-999", "Phil 2" → "빌립보서 2:1-999").
+    // Falls back to the raw string if the model is unavailable or returns INVALID.
+    const normalized = (await normalizeReference(trimmed)) || trimmed;
+
+    // Step 2: try to parse the canonical form into book_title / chapter_verse
+    // so the Bible viewer can resolve it. Fall back to raw if unparseable.
+    const parsed = parseReference(normalized);
     let bookTitle: string;
     let chapterVerse: string;
     let fullReference: string;
@@ -62,12 +67,21 @@ export async function POST(request: NextRequest) {
         "요한계시록",
       ];
       bookTitle = BOOK_IDS[parsed.book] || parsed.bookName;
-      const verseRange =
-        parsed.endVerse && parsed.endVerse !== parsed.startVerse
-          ? `${parsed.startVerse}-${parsed.endVerse}`
-          : `${parsed.startVerse}`;
-      chapterVerse = `${parsed.chapter}:${verseRange}`;
-      fullReference = `${bookTitle} ${chapterVerse}`;
+      // 999 is the "whole chapter" sentinel from normalizeReference.
+      // Render it as "X장" for a cleaner display.
+      const isWholeChapter =
+        parsed.startVerse === 1 && parsed.endVerse >= 999;
+      if (isWholeChapter) {
+        chapterVerse = `${parsed.chapter}장`;
+        fullReference = `${bookTitle} ${parsed.chapter}장`;
+      } else {
+        const verseRange =
+          parsed.endVerse && parsed.endVerse !== parsed.startVerse
+            ? `${parsed.startVerse}-${parsed.endVerse}`
+            : `${parsed.startVerse}`;
+        chapterVerse = `${parsed.chapter}:${verseRange}`;
+        fullReference = `${bookTitle} ${chapterVerse}`;
+      }
     } else {
       // Unparseable — store raw and hope for the best. Bible viewer
       // will show the friendly "no passage" message if requested.
