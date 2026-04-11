@@ -4,6 +4,7 @@ import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FeedbackModal from "@/components/FeedbackModal";
 import ScriptureModal from "@/components/ScriptureModal";
+import SummaryModal from "@/components/SummaryModal";
 import ChatPopup from "@/components/ChatPopup";
 import PrayerPopup from "@/components/PrayerPopup";
 import { getKSTDate } from "@/lib/date";
@@ -449,37 +450,6 @@ export default function DevotionClient({
         )}
       </div>
 
-      {/* AI Summary Panel */}
-      {passage?.ai_summary && summaryOpen && (
-        <div
-          className="mb-3 rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap"
-          style={{
-            background: "var(--bg-secondary)",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
-          }}
-        >
-          {passage.ai_summary.split("\n").map((line, i) => {
-            if (line.startsWith("## ")) {
-              return (
-                <h3
-                  key={i}
-                  className="text-sm font-semibold mt-3 mb-1 first:mt-0"
-                  style={{ color: "var(--accent)" }}
-                >
-                  {line.replace("## ", "")}
-                </h3>
-              );
-            }
-            return (
-              <p key={i} className="my-0.5">
-                {line}
-              </p>
-            );
-          })}
-        </div>
-      )}
-
       {/* Editor / Read-only view */}
       <div className="flex-1 flex flex-col mb-4 min-h-0">
         {isFuture ? (
@@ -493,7 +463,7 @@ export default function DevotionClient({
           >
             내일의 큐티는 아직 작성할 수 없습니다.
             <br />
-            위의 AI 개요를 펼쳐서 미리 본문을 묵상해보세요.
+            AI 버튼을 눌러 미리 본문을 묵상해보세요.
           </div>
         ) : isReadOnly ? (
           <div
@@ -562,6 +532,15 @@ export default function DevotionClient({
         <FeedbackModal
           report={feedbackReport}
           onClose={() => setShowFeedback(false)}
+        />
+      )}
+
+      {/* AI Summary Modal */}
+      {summaryOpen && passage?.ai_summary && (
+        <SummaryModal
+          reference={passage.full_reference}
+          summary={passage.ai_summary}
+          onClose={() => setSummaryOpen(false)}
         />
       )}
 

@@ -26,10 +26,16 @@ export default function ScriptureModal({
   const attemptCountRef = useRef(0);
   const MAX_ATTEMPTS = 5;
 
+  const refMissing = !reference || !reference.trim();
+
   useEffect(() => {
+    if (refMissing) {
+      setError("no_passage");
+      return;
+    }
     if (verses || loading || error) return;
     if (attemptCountRef.current >= MAX_ATTEMPTS) {
-      setError("여러 번 시도했지만 본문을 가져올 수 없습니다.");
+      setError("retry_exhausted");
       return;
     }
     attemptCountRef.current += 1;
@@ -38,15 +44,17 @@ export default function ScriptureModal({
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok || data.error) {
-          setError(data.error || `오류 (${r.status})`);
+          // Any API failure for a missing/unscrapable passage collapses to
+          // the same friendly message — user doesn't care about 400 vs 404.
+          setError("no_passage");
           return;
         }
         setVerses(data.verses || []);
         attemptCountRef.current = 0;
       })
-      .catch((e) => setError(String(e)))
+      .catch(() => setError("no_passage"))
       .finally(() => setLoading(false));
-  }, [reference, version, verses, loading, error]);
+  }, [reference, version, verses, loading, error, refMissing]);
 
   const toggleHighlight = (verseNum: number) => {
     setHighlighted((prev) => {
@@ -165,19 +173,48 @@ export default function ScriptureModal({
             <p style={{ color: "var(--text-muted)" }}>본문 불러오는 중...</p>
           )}
           {error && (
-            <div>
-              <p style={{ color: "var(--danger)" }}>오류: {error}</p>
-              <button
-                onClick={handleRetry}
-                className="mt-2 px-3 py-1 rounded text-xs cursor-pointer"
-                style={{
-                  background: "var(--bg-input)",
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                다시 시도
-              </button>
+            <div className="py-6 text-center">
+              {error === "no_passage" ? (
+                <>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    해당 날짜의 본문이 아직 업로드되지 않았습니다.
+                    <br />
+                    <a
+                      href="https://cdmb.link"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      cdmb.link
+                    </a>
+                    를 직접 확인하세요.
+                  </p>
+                </>
+              ) : (
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  여러 번 시도했지만 본문을 가져올 수 없습니다.
+                </p>
+              )}
+              {!refMissing && (
+                <button
+                  onClick={handleRetry}
+                  className="mt-3 px-3 py-1 rounded text-xs cursor-pointer"
+                  style={{
+                    background: "var(--bg-input)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  다시 시도
+                </button>
+              )}
             </div>
           )}
           {verses && verses.length > 0 && (

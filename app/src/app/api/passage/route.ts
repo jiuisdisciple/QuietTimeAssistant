@@ -3,6 +3,8 @@ import { sql } from "@vercel/postgres";
 import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary } from "@/lib/ai";
 import { getKSTDate } from "@/lib/date";
+import { parseReference } from "@/lib/bible";
+import { requireApprovedUser } from "@/lib/auth";
 
 export async function DELETE(request: NextRequest) {
   const date = request.nextUrl.searchParams.get("date");
@@ -11,6 +13,106 @@ export async function DELETE(request: NextRequest) {
   }
   await sql`DELETE FROM passages WHERE date = ${date}`;
   return NextResponse.json({ deleted: date });
+}
+
+// Manual passage entry. Approved users can override or seed a passage
+// for a given date — useful when cdmb.link doesn't publish one (e.g.
+// Sundays) or the user wants to study a different text.
+export async function POST(request: NextRequest) {
+  try {
+    await requireApprovedUser();
+    const body = await request.json();
+    const { date, reference } = body as {
+      date?: string;
+      reference?: string;
+    };
+
+    if (!date || !reference || !reference.trim()) {
+      return NextResponse.json(
+        { error: "date and reference required" },
+        { status: 400 }
+      );
+    }
+
+    const trimmed = reference.trim();
+
+    // Try to parse into canonical book_title / chapter_verse so the Bible
+    // viewer can still resolve it. Fall back to raw string if unparseable.
+    const parsed = parseReference(trimmed);
+    let bookTitle: string;
+    let chapterVerse: string;
+    let fullReference: string;
+
+    if (parsed) {
+      // Canonical full name for book (e.g. "시" → "시편")
+      const BOOK_IDS = [
+        "", "창세기", "출애굽기", "레위기", "민수기", "신명기",
+        "여호수아", "사사기", "룻기", "사무엘상", "사무엘하",
+        "열왕기상", "열왕기하", "역대상", "역대하", "에스라",
+        "느헤미야", "에스더", "욥기", "시편", "잠언", "전도서",
+        "아가", "이사야", "예레미야", "예레미야애가", "에스겔",
+        "다니엘", "호세아", "요엘", "아모스", "오바댜", "요나",
+        "미가", "나훔", "하박국", "스바냐", "학개", "스가랴",
+        "말라기", "마태복음", "마가복음", "누가복음", "요한복음",
+        "사도행전", "로마서", "고린도전서", "고린도후서",
+        "갈라디아서", "에베소서", "빌립보서", "골로새서",
+        "데살로니가전서", "데살로니가후서", "디모데전서", "디모데후서",
+        "디도서", "빌레몬서", "히브리서", "야고보서", "베드로전서",
+        "베드로후서", "요한일서", "요한이서", "요한삼서", "유다서",
+        "요한계시록",
+      ];
+      bookTitle = BOOK_IDS[parsed.book] || parsed.bookName;
+      const verseRange =
+        parsed.endVerse && parsed.endVerse !== parsed.startVerse
+          ? `${parsed.startVerse}-${parsed.endVerse}`
+          : `${parsed.startVerse}`;
+      chapterVerse = `${parsed.chapter}:${verseRange}`;
+      fullReference = `${bookTitle} ${chapterVerse}`;
+    } else {
+      // Unparseable — store raw and hope for the best. Bible viewer
+      // will show the friendly "no passage" message if requested.
+      bookTitle = trimmed.replace(/[\d\s:\-].*$/, "") || trimmed;
+      chapterVerse = trimmed.slice(bookTitle.length).trim();
+      fullReference = trimmed;
+    }
+
+    // Upsert — overwrites any existing cached entry and clears AI summary
+    // so it will be regenerated for the new reference.
+    const saved = await sql`
+      INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
+      VALUES (${date}, ${bookTitle}, ${chapterVerse}, ${fullReference}, NULL)
+      ON CONFLICT (date) DO UPDATE SET
+        book_title = ${bookTitle},
+        chapter_verse = ${chapterVerse},
+        full_reference = ${fullReference},
+        ai_summary = NULL
+      RETURNING *
+    `;
+    const row = saved.rows[0];
+
+    // Generate AI summary in-request. Personal app, user is waiting.
+    try {
+      const summary = await generateSummary(fullReference);
+      await sql`UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}`;
+      row.ai_summary = summary;
+    } catch (e) {
+      console.error("Manual passage AI summary failed:", e);
+    }
+
+    return NextResponse.json(row);
+  } catch (error) {
+    if (String(error).includes("NOT_REGISTERED")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    if (String(error).includes("NOT_APPROVED")) {
+      return NextResponse.json({ error: "not_approved" }, { status: 403 });
+    }
+    console.error("Manual passage POST error:", error);
+    return NextResponse.json(
+      { error: "서버 오류", detail: String(error) },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(request: NextRequest) {

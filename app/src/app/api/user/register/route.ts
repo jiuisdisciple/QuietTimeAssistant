@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { sql } from "@vercel/postgres";
+import { notifyAdminNewUser } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,6 +53,15 @@ export async function POST(request: NextRequest) {
       )
       RETURNING *
     `;
+
+    // Notify admin on pending registrations (not auto-approved admin
+    // registering themselves). Fire-and-forget — failure doesn't block
+    // the user's registration.
+    if (!isAdmin) {
+      notifyAdminNewUser({ name, email, reason }).catch((e) =>
+        console.error("notifyAdminNewUser:", e)
+      );
+    }
 
     return NextResponse.json(result.rows[0]);
   } catch (error) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { UserButton } from "@clerk/nextjs";
+import ManualPassageModal from "@/components/ManualPassageModal";
 import { getKSTDate } from "@/lib/date";
 
 const TimeChart = dynamic(() => import("@/components/TimeChart"), {
@@ -45,12 +46,14 @@ export default function HomeClient({
 }) {
   const [todayPassage, setTodayPassage] = useState<Passage | null>(null);
   const [tomorrowPassage, setTomorrowPassage] = useState<Passage | null>(null);
-  const [tomorrowLoading, setTomorrowLoading] = useState(false);
   const [devotions, setDevotions] = useState<Devotion[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [showChart, setShowChart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [font, setFont] = useState<FontChoice>("sans");
+  const [manualEntry, setManualEntry] = useState<
+    { date: string; label: string } | null
+  >(null);
 
   const today = getKSTDate(0);
   const tomorrow = getKSTDate(1);
@@ -84,24 +87,16 @@ export default function HomeClient({
       .finally(() => setLoading(false));
   }, [today, tomorrow]);
 
-  const handleFetchTomorrow = async () => {
-    setTomorrowLoading(true);
+  const refetchPassage = async (date: string) => {
     try {
-      const res = await fetch(`/api/passage?date=${tomorrow}`);
+      const res = await fetch(`/api/passage?date=${date}`);
       const data = await res.json();
       if (!data.error) {
-        setTomorrowPassage(data);
-      } else {
-        alert(
-          data.error === "not_cached"
-            ? "내일 본문을 아직 가져올 수 없습니다"
-            : data.error
-        );
+        if (date === today) setTodayPassage(data);
+        else if (date === tomorrow) setTomorrowPassage(data);
       }
     } catch (e) {
-      alert(`오류: ${e}`);
-    } finally {
-      setTomorrowLoading(false);
+      console.error(e);
     }
   };
 
@@ -179,23 +174,64 @@ export default function HomeClient({
         </div>
       </div>
 
-      {/* Today's Passage */}
-      {todayPassage && (
-        <div
-          className="text-center mb-4 py-3 px-4 rounded-lg"
-          style={{ background: "var(--bg-secondary)" }}
-        >
+      {/* Today's + Tomorrow's Passage (compact) */}
+      <div
+        className="text-center mb-4 py-3 px-4 rounded-lg"
+        style={{ background: "var(--bg-secondary)" }}
+      >
+        {/* Today */}
+        <div>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             오늘의 본문
           </p>
-          <p
-            className="text-base font-medium mt-1"
-            style={{ color: "var(--accent)" }}
-          >
-            {todayPassage.full_reference}
-          </p>
+          {todayPassage ? (
+            <p
+              className="text-base font-medium mt-0.5"
+              style={{ color: "var(--accent)" }}
+            >
+              {todayPassage.full_reference}
+            </p>
+          ) : (
+            <button
+              onClick={() =>
+                setManualEntry({ date: today, label: "오늘" })
+              }
+              className="text-sm mt-0.5 underline cursor-pointer"
+              style={{ color: "var(--accent)" }}
+            >
+              직접 추가
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Tomorrow */}
+        <div
+          className="mt-2 pt-2"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            내일의 본문
+          </p>
+          {tomorrowPassage ? (
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {tomorrowPassage.full_reference}
+            </p>
+          ) : (
+            <button
+              onClick={() =>
+                setManualEntry({ date: tomorrow, label: "내일" })
+              }
+              className="text-xs mt-0.5 underline cursor-pointer"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              직접 추가
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Streak */}
       {stats && stats.streak > 0 && (
@@ -207,64 +243,6 @@ export default function HomeClient({
             {stats.streak}일 연속 큐티
           </span>
         </div>
-      )}
-
-      {/* Tomorrow Button */}
-      {tomorrowPassage ? (
-        <Link href={`/devotion/${tomorrow}`}>
-          <div
-            className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-50"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px dashed var(--border)",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  내일 미리보기
-                </p>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {tomorrow}
-                </p>
-                <p
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {tomorrowPassage.full_reference}
-                </p>
-              </div>
-              <span className="text-lg" style={{ color: "var(--text-muted)" }}>
-                &rarr;
-              </span>
-            </div>
-          </div>
-        </Link>
-      ) : (
-        <button
-          onClick={handleFetchTomorrow}
-          disabled={tomorrowLoading}
-          className="mb-3 w-full p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60 disabled:opacity-40"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px dashed var(--border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <div className="flex items-center justify-center gap-2 text-sm">
-            {tomorrowLoading ? (
-              <>불러오는 중...</>
-            ) : (
-              <>
-                <span>📖</span>
-                <span>내일 본문 미리 불러오기 ({tomorrow})</span>
-              </>
-            )}
-          </div>
-        </button>
       )}
 
       {/* Today Button */}
@@ -385,6 +363,16 @@ export default function HomeClient({
           })()}
         </div>
       </div>
+
+      {/* Manual Passage Entry Modal */}
+      {manualEntry && (
+        <ManualPassageModal
+          date={manualEntry.date}
+          label={manualEntry.label}
+          onClose={() => setManualEntry(null)}
+          onSaved={() => refetchPassage(manualEntry.date)}
+        />
+      )}
     </main>
   );
 }

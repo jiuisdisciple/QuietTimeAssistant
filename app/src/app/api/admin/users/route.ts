@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { requireAdmin } from "@/lib/auth";
+import { notifyUserApproved } from "@/lib/email";
 
 // GET - list all users (pending first)
 export async function GET() {
@@ -45,7 +46,17 @@ export async function POST(request: NextRequest) {
       WHERE id = ${parseInt(userId)}
       RETURNING *
     `;
-    return NextResponse.json(result.rows[0]);
+    const updated = result.rows[0];
+
+    // Notify the user on approval. Fire-and-forget.
+    if (action === "approve" && updated?.email) {
+      notifyUserApproved({
+        name: updated.name,
+        email: updated.email,
+      }).catch((e) => console.error("notifyUserApproved:", e));
+    }
+
+    return NextResponse.json(updated);
   } catch (error) {
     if (String(error).includes("NOT_ADMIN")) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
