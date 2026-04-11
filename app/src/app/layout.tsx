@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Noto_Serif_KR, Gowun_Dodum } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,15 +50,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${geistSans.variable} ${notoSerifKR.variable} ${gowunDodum.variable} h-full antialiased`}
-      data-font="sans"
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#7c8cf0",
+          colorBackground: "#1a1a2e",
+          colorInputBackground: "#253352",
+          colorInputText: "#e0e0e0",
+          colorText: "#e0e0e0",
+          colorTextSecondary: "#a0a0b0",
+        },
+      }}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: fontScript }} />
-      </head>
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+      <html
+        lang="ko"
+        className={`${geistSans.variable} ${notoSerifKR.variable} ${gowunDodum.variable} h-full antialiased`}
+        data-font="sans"
+      >
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: fontScript }} />
+        </head>
+        <body className="min-h-full flex flex-col">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

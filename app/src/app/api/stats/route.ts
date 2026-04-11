@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { getKSTDate } from "@/lib/date";
+import { requireApprovedUser } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const user = await requireApprovedUser();
     const today = getKSTDate(0);
     const sixDaysAgo = getKSTDate(-6);
 
-    // Get last 7 days of devotion timestamps (inclusive)
     const timeline = await sql`
       SELECT date, done_at
       FROM devotions
-      WHERE date >= ${sixDaysAgo} AND date <= ${today}
+      WHERE user_id = ${user.id}
+        AND date >= ${sixDaysAgo} AND date <= ${today}
       ORDER BY date ASC
     `;
 
-    // Calculate streak against KST today
     const streak = await sql`
       WITH dates AS (
         SELECT date, ROW_NUMBER() OVER (ORDER BY date DESC) as rn
         FROM devotions
-        WHERE done_at IS NOT NULL
+        WHERE user_id = ${user.id} AND done_at IS NOT NULL
         ORDER BY date DESC
       )
       SELECT COUNT(*) as streak
@@ -33,6 +34,12 @@ export async function GET() {
       streak: parseInt(streak.rows[0]?.streak || "0"),
     });
   } catch (error) {
+    if (String(error).includes("NOT_REGISTERED")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    if (String(error).includes("NOT_APPROVED")) {
+      return NextResponse.json({ error: "not_approved" }, { status: 403 });
+    }
     console.error("Stats API error:", error);
     return NextResponse.json(
       { error: "통계를 가져올 수 없습니다" },
