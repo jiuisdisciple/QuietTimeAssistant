@@ -249,7 +249,9 @@ export default function ChatPopup({
                 본문에 대해 궁금한 점을 물어보세요.
                 <br />
                 <span className="text-xs">
-                  예: &quot;이 구절의 헬라어 원어 뉘앙스는?&quot;
+                  예: &quot;시편 73:20에서 하나님께서도 잠에서 깨신다는
+                  표현을 쓴 것 같은데, 하나님께서도 잠을 주무시려나? 어떠한
+                  의미인지 궁금해.&quot;
                 </span>
               </p>
             )}

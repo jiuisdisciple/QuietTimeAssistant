@@ -89,6 +89,22 @@ export default function RootLayout({
           footerActionLink: { color: "#7c8cf0" },
           dividerLine: { background: "#3a4a70" },
           dividerText: { color: "#b4b4c0" },
+          // UserButton popover (top-left avatar menu)
+          userButtonPopoverCard: {
+            background: "#1a1a2e",
+            border: "1px solid #2a2a42",
+          },
+          userButtonPopoverMainIdentifier: { color: "#f5f5fa" },
+          userButtonPopoverSecondaryIdentifier: { color: "#b4b4c0" },
+          userPreviewMainIdentifier: { color: "#f5f5fa" },
+          userPreviewSecondaryIdentifier: { color: "#b4b4c0" },
+          userButtonPopoverActionButton: { color: "#e8e8ec" },
+          userButtonPopoverActionButtonText: { color: "#e8e8ec" },
+          userButtonPopoverActionButtonIcon: { color: "#b4b4c0" },
+          userButtonPopoverFooter: {
+            background: "#141424",
+            borderTop: "1px solid #2a2a42",
+          },
         },
       }}
     >
