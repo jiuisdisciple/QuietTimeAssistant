@@ -257,42 +257,43 @@ export default function HomeClient({
         </div>
       )}
 
-      {/* Tomorrow devotion navigation (only shown when tomorrow has a
-          real reference — otherwise the manual-entry chip at the top handles it) */}
-      {tomorrowPassage?.full_reference && (
-        <Link href={`/devotion/${tomorrow}`}>
-          <div
-            className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px dashed var(--border)",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  내일 묵상 미리보기
-                </p>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {tomorrow}
-                </p>
+      {/* Tomorrow devotion navigation — always shown so the user can
+          jump into tomorrow's page regardless of whether the passage
+          has been fetched yet. Reference line only renders when available. */}
+      <Link href={`/devotion/${tomorrow}`}>
+        <div
+          className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px dashed var(--border)",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                내일 묵상 미리보기
+              </p>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {tomorrow}
+              </p>
+              {tomorrowPassage?.full_reference && (
                 <p
                   className="text-xs mt-0.5"
                   style={{ color: "var(--text-secondary)" }}
                 >
                   {tomorrowPassage.full_reference}
                 </p>
-              </div>
-              <span className="text-lg" style={{ color: "var(--text-muted)" }}>
-                &rarr;
-              </span>
+              )}
             </div>
+            <span className="text-lg" style={{ color: "var(--text-muted)" }}>
+              &rarr;
+            </span>
           </div>
-        </Link>
-      )}
+        </div>
+      </Link>
 
       {/* Today Button */}
       <Link href={`/devotion/${today}`}>
