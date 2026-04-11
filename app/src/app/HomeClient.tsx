@@ -193,13 +193,19 @@ export default function HomeClient({
             </p>
           ) : (
             <button
+              type="button"
               onClick={() =>
                 setManualEntry({ date: today, label: "오늘" })
               }
-              className="text-sm mt-0.5 underline cursor-pointer"
-              style={{ color: "var(--accent)" }}
+              className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+              style={{
+                background: "var(--bg-card)",
+                color: "var(--accent)",
+                border: "1px dashed var(--accent)",
+              }}
             >
-              직접 추가
+              <span>+</span>
+              <span>직접 추가</span>
             </button>
           )}
         </div>
@@ -221,13 +227,19 @@ export default function HomeClient({
             </p>
           ) : (
             <button
+              type="button"
               onClick={() =>
                 setManualEntry({ date: tomorrow, label: "내일" })
               }
-              className="text-xs mt-0.5 underline cursor-pointer"
-              style={{ color: "var(--text-secondary)" }}
+              className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+              style={{
+                background: "var(--bg-card)",
+                color: "var(--text-secondary)",
+                border: "1px dashed var(--border)",
+              }}
             >
-              직접 추가
+              <span>+</span>
+              <span>직접 추가</span>
             </button>
           )}
         </div>
@@ -243,6 +255,43 @@ export default function HomeClient({
             {stats.streak}일 연속 큐티
           </span>
         </div>
+      )}
+
+      {/* Tomorrow devotion navigation (only shown when tomorrow has a
+          passage — otherwise the manual-entry chip at the top handles it) */}
+      {tomorrowPassage && (
+        <Link href={`/devotion/${tomorrow}`}>
+          <div
+            className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px dashed var(--border)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  내일 묵상 미리보기
+                </p>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {tomorrow}
+                </p>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {tomorrowPassage.full_reference}
+                </p>
+              </div>
+              <span className="text-lg" style={{ color: "var(--text-muted)" }}>
+                &rarr;
+              </span>
+            </div>
+          </div>
+        </Link>
       )}
 
       {/* Today Button */}
