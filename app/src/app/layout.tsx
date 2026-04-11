@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Noto_Serif_KR, Nanum_Pen_Script } from "next/font/google";
+import { Geist, Noto_Serif_KR, Gowun_Dodum } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,10 +13,10 @@ const notoSerifKR = Noto_Serif_KR({
   preload: false,
 });
 
-const nanumPen = Nanum_Pen_Script({
+const gowunDodum = Gowun_Dodum({
   variable: "--font-hand",
   weight: "400",
-  subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -51,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${notoSerifKR.variable} ${nanumPen.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${notoSerifKR.variable} ${gowunDodum.variable} h-full antialiased`}
       data-font="sans"
     >
       <head>

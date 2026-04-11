@@ -187,10 +187,47 @@ export default function DevotionPage({
     );
   }
 
+  // Save indicator
+  const saveIndicator = (
+    <>
+      {saving && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--text-muted)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="animate-spin"
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      )}
+      {!saving && saved && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--text-muted)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </>
+  );
+
   return (
     <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6 flex flex-col">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Top Bar: Home only */}
+      <div className="flex items-center justify-between mb-3">
         <Link
           href="/"
           className="text-sm px-3 py-1 rounded-lg"
@@ -198,154 +235,10 @@ export default function DevotionPage({
         >
           &larr; 홈
         </Link>
-        <div className="flex items-center gap-2">
-          {/* Gray save indicator */}
-          {saving && (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--text-muted)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="animate-spin"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-            </svg>
-          )}
-          {!saving && saved && (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--text-muted)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          )}
-
-          {/* 묵상 완료 button (before done) */}
-          {isToday && !isDone && (
-            <button
-              onClick={handleDone}
-              disabled={!content.trim() || saving}
-              className="text-sm px-4 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
-              style={{
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              묵상 완료
-            </button>
-          )}
-
-          {/* After done: edit / copy / status */}
-          {isDone && isToday && (
-            <>
-              {!editMode ? (
-                <>
-                  <button
-                    onClick={handleCopyContent}
-                    className="p-1.5 rounded-lg cursor-pointer"
-                    style={{
-                      background: "var(--bg-card)",
-                      color: contentCopied
-                        ? "var(--success)"
-                        : "var(--text-secondary)",
-                      border: "1px solid var(--border)",
-                    }}
-                    title="묵상 복사"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="p-1.5 rounded-lg cursor-pointer"
-                    style={{
-                      background: "var(--bg-card)",
-                      color: "var(--text-secondary)",
-                      border: "1px solid var(--border)",
-                    }}
-                    title="수정"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                    </svg>
-                  </button>
-                  <span
-                    className="text-xs px-2 py-1 rounded-lg"
-                    style={{
-                      background: "var(--bg-card)",
-                      color: "var(--success)",
-                    }}
-                  >
-                    완료
-                  </span>
-                </>
-              ) : (
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="text-sm px-3 py-1 rounded-lg cursor-pointer"
-                  style={{
-                    background: "var(--bg-card)",
-                    color: "var(--text-secondary)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  편집 종료
-                </button>
-              )}
-            </>
-          )}
-
-          {/* Past day: completed badge only */}
-          {isDone && !isToday && (
-            <span
-              className="text-sm px-3 py-1 rounded-lg"
-              style={{ background: "var(--bg-card)", color: "var(--success)" }}
-            >
-              완료됨
-            </span>
-          )}
-        </div>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {date}
+        </p>
       </div>
-
-      {/* Date (small, left aligned) */}
-      <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-        {date}
-      </p>
 
       {/* Passage Reference - big bold centered */}
       {passage && (
@@ -357,9 +250,9 @@ export default function DevotionPage({
         </h1>
       )}
 
-      {/* Quick Action Buttons (centered, 4 buttons) */}
+      {/* Quick Action Buttons (right aligned, 4 buttons) */}
       {passage && (
-        <div className="flex justify-center gap-2 mb-3">
+        <div className="flex justify-end gap-2 mb-3">
           {/* K button: closed book + 한 */}
           <button
             onClick={() => setScriptureModal("KRV")}
@@ -496,6 +389,119 @@ export default function DevotionPage({
               </p>
             );
           })}
+        </div>
+      )}
+
+      {/* Action bar (right above editor): save indicator + 묵상 완료 / edit / copy */}
+      {(isToday || isDone) && !isFuture && (
+        <div className="flex items-center justify-end gap-2 mb-2 min-h-[28px]">
+          {saveIndicator}
+
+          {/* Before done: 묵상 완료 button */}
+          {isToday && !isDone && (
+            <button
+              onClick={handleDone}
+              disabled={!content.trim() || saving}
+              className="text-sm px-4 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
+              style={{
+                background: "var(--accent)",
+                color: "#fff",
+              }}
+            >
+              묵상 완료
+            </button>
+          )}
+
+          {/* After done (today): copy / edit / completed */}
+          {isDone && isToday && !editMode && (
+            <>
+              <button
+                onClick={handleCopyContent}
+                className="p-1.5 rounded-lg cursor-pointer"
+                style={{
+                  background: "var(--bg-card)",
+                  color: contentCopied
+                    ? "var(--success)"
+                    : "var(--text-secondary)",
+                  border: "1px solid var(--border)",
+                }}
+                title="묵상 복사"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <button
+                onClick={() => setEditMode(true)}
+                className="p-1.5 rounded-lg cursor-pointer"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border)",
+                }}
+                title="수정"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
+              <span
+                className="text-xs px-2 py-1 rounded-lg"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--success)",
+                }}
+              >
+                완료
+              </span>
+            </>
+          )}
+
+          {/* After done + editing */}
+          {isDone && isToday && editMode && (
+            <button
+              onClick={() => setEditMode(false)}
+              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+              style={{
+                background: "var(--bg-card)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              편집 종료
+            </button>
+          )}
+
+          {/* Past day: completed badge only */}
+          {isDone && !isToday && (
+            <span
+              className="text-sm px-3 py-1 rounded-lg"
+              style={{ background: "var(--bg-card)", color: "var(--success)" }}
+            >
+              완료됨
+            </span>
+          )}
         </div>
       )}
 
