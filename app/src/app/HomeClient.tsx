@@ -184,7 +184,7 @@ export default function HomeClient({
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             오늘의 본문
           </p>
-          {todayPassage ? (
+          {todayPassage?.full_reference ? (
             <p
               className="text-base font-medium mt-0.5"
               style={{ color: "var(--accent)" }}
@@ -218,7 +218,7 @@ export default function HomeClient({
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             내일의 본문
           </p>
-          {tomorrowPassage ? (
+          {tomorrowPassage?.full_reference ? (
             <p
               className="text-xs mt-0.5"
               style={{ color: "var(--text-secondary)" }}
@@ -258,8 +258,8 @@ export default function HomeClient({
       )}
 
       {/* Tomorrow devotion navigation (only shown when tomorrow has a
-          passage — otherwise the manual-entry chip at the top handles it) */}
-      {tomorrowPassage && (
+          real reference — otherwise the manual-entry chip at the top handles it) */}
+      {tomorrowPassage?.full_reference && (
         <Link href={`/devotion/${tomorrow}`}>
           <div
             className="mb-3 p-3 rounded-xl cursor-pointer transition-all hover:opacity-80 opacity-60"

@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     if (cached.rows.length > 0) {
       const row = cached.rows[0];
       // Detect bad cached reference: missing space between book name and chapter
-      // e.g. "시73:1-28" instead of "시편 73:1-28"
+      // e.g. "시73:1-28" instead of "시편 73:1-28", or empty full_reference.
       const looksBad =
         !row.full_reference ||
         !/\s\d/.test(row.full_reference) ||
@@ -136,6 +136,16 @@ export async function GET(request: NextRequest) {
         !row.book_title;
 
       if (looksBad) {
+        // In lazy mode, don't hit cdmb — just drop the bad row and report
+        // not_cached so the UI can show the manual-entry affordance.
+        if (lazy) {
+          await sql`DELETE FROM passages WHERE date = ${date}`;
+          return NextResponse.json(
+            { error: "not_cached" },
+            { status: 404 }
+          );
+        }
+
         // Re-fetch and overwrite
         const fresh = await fetchTodayPassage(date);
         if (fresh && /\s\d/.test(fresh.fullReference)) {
@@ -159,6 +169,14 @@ export async function GET(request: NextRequest) {
           }
           return NextResponse.json(newRow);
         }
+
+        // Bad row and refetch failed — purge so the UI can surface the
+        // manual-entry affordance instead of rendering an empty reference.
+        await sql`DELETE FROM passages WHERE date = ${date}`;
+        return NextResponse.json(
+          { error: "not_cached" },
+          { status: 404 }
+        );
       }
 
       // If cached but missing AI summary, try to generate it now
