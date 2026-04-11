@@ -1,0 +1,5 @@
+# Reference material downloaded locally — not part of the project
+claude-code-best-practice-main/
+
+# Claude Code personal/local settings
+.claude/settings.local.json
