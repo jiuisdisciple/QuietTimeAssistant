@@ -103,7 +103,6 @@ export default function TimeChart({
             stroke="#6b7280"
             fontSize={11}
             tickFormatter={(v) => `${v}시`}
-            reversed
           />
           <Tooltip
             contentStyle={{
