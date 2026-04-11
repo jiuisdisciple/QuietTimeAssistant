@@ -3,8 +3,9 @@
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FeedbackModal from "@/components/FeedbackModal";
-import ScripturePanel from "@/components/ScripturePanel";
+import ScriptureModal from "@/components/ScriptureModal";
 import ChatPopup from "@/components/ChatPopup";
+import PrayerPopup from "@/components/PrayerPopup";
 import { getKSTDate } from "@/lib/date";
 
 interface PassageData {
@@ -25,25 +26,30 @@ export default function DevotionPage({
 }) {
   const { date } = use(params);
   const [passage, setPassage] = useState<PassageData | null>(null);
-  const [devotion, setDevotion] = useState<DevotionData | null>(null);
+  const [, setDevotion] = useState<DevotionData | null>(null);
   const [content, setContent] = useState("");
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [krvOpen, setKrvOpen] = useState(false);
-  const [esvOpen, setEsvOpen] = useState(false);
+  const [scriptureModal, setScriptureModal] = useState<
+    "KRV" | "ESV" | null
+  >(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [prayerOpen, setPrayerOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackReport, setFeedbackReport] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [contentCopied, setContentCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const today = getKSTDate(0);
   const isToday = date === today;
   const isFuture = date > today;
-  const isReadOnly = !isToday || isDone;
+  // Read-only when: past day, future day, or done (unless user enabled edit mode)
+  const isReadOnly = !isToday || (isDone && !editMode);
 
   // Load data
   useEffect(() => {
@@ -69,7 +75,7 @@ export default function DevotionPage({
   // Auto-save (3 seconds after typing stops)
   const autoSave = useCallback(
     (text: string) => {
-      if (isReadOnly) return;
+      if (!isToday) return;
       setSaving(true);
       fetch("/api/devotion", {
         method: "POST",
@@ -79,6 +85,8 @@ export default function DevotionPage({
           content: text,
           passage_reference: passage?.full_reference || null,
           done: false,
+          // If already done, don't touch done_at
+          preserve_done: isDone,
         }),
       })
         .then(() => {
@@ -88,7 +96,7 @@ export default function DevotionPage({
         .catch(console.error)
         .finally(() => setSaving(false));
     },
-    [date, passage, isReadOnly]
+    [date, passage, isToday, isDone]
   );
 
   const handleContentChange = (text: string) => {
@@ -97,7 +105,7 @@ export default function DevotionPage({
     autoSaveTimer.current = setTimeout(() => autoSave(text), 3000);
   };
 
-  // Done
+  // 묵상 완료
   const handleDone = async () => {
     setSaving(true);
     try {
@@ -117,6 +125,8 @@ export default function DevotionPage({
         return;
       }
       setIsDone(true);
+      setEditMode(false);
+      setPrayerOpen(true);
     } catch (e) {
       console.error(e);
       alert(`저장 중 오류: ${e}`);
@@ -155,6 +165,20 @@ export default function DevotionPage({
     }
   };
 
+  const handleCopyContent = async () => {
+    if (!content.trim()) return;
+    try {
+      const fullText = passage?.full_reference
+        ? `${passage.full_reference}\n\n${content}`
+        : content;
+      await navigator.clipboard.writeText(fullText);
+      setContentCopied(true);
+      setTimeout(() => setContentCopied(false), 1500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -175,30 +199,139 @@ export default function DevotionPage({
           &larr; 홈
         </Link>
         <div className="flex items-center gap-2">
+          {/* Gray save indicator */}
           {saving && (
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-              저장중...
-            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--text-muted)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="animate-spin"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
           )}
-          {saved && (
-            <span className="text-xs" style={{ color: "var(--success)" }}>
-              저장됨
-            </span>
+          {!saving && saved && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--text-muted)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
           )}
+
+          {/* 묵상 완료 button (before done) */}
           {isToday && !isDone && (
             <button
               onClick={handleDone}
-              disabled={!content.trim()}
+              disabled={!content.trim() || saving}
               className="text-sm px-4 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
               style={{
                 background: "var(--accent)",
                 color: "#fff",
               }}
             >
-              Done
+              묵상 완료
             </button>
           )}
-          {isDone && (
+
+          {/* After done: edit / copy / status */}
+          {isDone && isToday && (
+            <>
+              {!editMode ? (
+                <>
+                  <button
+                    onClick={handleCopyContent}
+                    className="p-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: contentCopied
+                        ? "var(--success)"
+                        : "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                    title="묵상 복사"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="p-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                    title="수정"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  </button>
+                  <span
+                    className="text-xs px-2 py-1 rounded-lg"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: "var(--success)",
+                    }}
+                  >
+                    완료
+                  </span>
+                </>
+              ) : (
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="text-sm px-3 py-1 rounded-lg cursor-pointer"
+                  style={{
+                    background: "var(--bg-card)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  편집 종료
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Past day: completed badge only */}
+          {isDone && !isToday && (
             <span
               className="text-sm px-3 py-1 rounded-lg"
               style={{ background: "var(--bg-card)", color: "var(--success)" }}
@@ -229,17 +362,11 @@ export default function DevotionPage({
         <div className="flex justify-center gap-2 mb-3">
           {/* K button: closed book + 한 */}
           <button
-            onClick={() => {
-              setKrvOpen(!krvOpen);
-              if (!krvOpen) {
-                setEsvOpen(false);
-                setSummaryOpen(false);
-              }
-            }}
+            onClick={() => setScriptureModal("KRV")}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
             style={{
-              background: krvOpen ? "var(--accent)" : "var(--bg-card)",
-              color: krvOpen ? "#fff" : "var(--text-secondary)",
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
               border: "1px solid var(--border)",
             }}
             title="개역한글"
@@ -261,17 +388,11 @@ export default function DevotionPage({
           </button>
           {/* E button: open book + E */}
           <button
-            onClick={() => {
-              setEsvOpen(!esvOpen);
-              if (!esvOpen) {
-                setKrvOpen(false);
-                setSummaryOpen(false);
-              }
-            }}
+            onClick={() => setScriptureModal("ESV")}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
             style={{
-              background: esvOpen ? "var(--accent)" : "var(--bg-card)",
-              color: esvOpen ? "#fff" : "var(--text-secondary)",
+              background: "var(--bg-card)",
+              color: "var(--text-secondary)",
               border: "1px solid var(--border)",
             }}
             title="ESV"
@@ -294,13 +415,7 @@ export default function DevotionPage({
           </button>
           {/* AI button: sparkles icon */}
           <button
-            onClick={() => {
-              setSummaryOpen(!summaryOpen);
-              if (!summaryOpen) {
-                setKrvOpen(false);
-                setEsvOpen(false);
-              }
-            }}
+            onClick={() => setSummaryOpen(!summaryOpen)}
             disabled={!passage.ai_summary}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
@@ -351,22 +466,6 @@ export default function DevotionPage({
             </svg>
           </button>
         </div>
-      )}
-
-      {/* Scripture Panels */}
-      {passage && (
-        <>
-          <ScripturePanel
-            reference={passage.full_reference}
-            version="KRV"
-            open={krvOpen}
-          />
-          <ScripturePanel
-            reference={passage.full_reference}
-            version="ESV"
-            open={esvOpen}
-          />
-        </>
       )}
 
       {/* AI Summary Panel */}
@@ -485,6 +584,15 @@ export default function DevotionPage({
         />
       )}
 
+      {/* Scripture Modal */}
+      {scriptureModal && passage && (
+        <ScriptureModal
+          reference={passage.full_reference}
+          version={scriptureModal}
+          onClose={() => setScriptureModal(null)}
+        />
+      )}
+
       {/* QnA Chat Popup */}
       {chatOpen && (
         <ChatPopup
@@ -493,6 +601,9 @@ export default function DevotionPage({
           onClose={() => setChatOpen(false)}
         />
       )}
+
+      {/* Prayer Popup (after 묵상 완료) */}
+      {prayerOpen && <PrayerPopup onClose={() => setPrayerOpen(false)} />}
     </main>
   );
 }

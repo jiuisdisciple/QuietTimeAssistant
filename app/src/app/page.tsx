@@ -31,6 +31,9 @@ interface Stats {
   streak: number;
 }
 
+type FontChoice = "sans" | "serif" | "hand";
+const FONT_KEY = "quiettime-font";
+
 export default function Home() {
   const [todayPassage, setTodayPassage] = useState<Passage | null>(null);
   const [tomorrowPassage, setTomorrowPassage] = useState<Passage | null>(null);
@@ -39,9 +42,23 @@ export default function Home() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [showChart, setShowChart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [font, setFont] = useState<FontChoice>("sans");
 
   const today = getKSTDate(0);
   const tomorrow = getKSTDate(1);
+
+  // Load font preference on mount
+  useEffect(() => {
+    const saved = (localStorage.getItem(FONT_KEY) as FontChoice) || "sans";
+    setFont(saved);
+    document.documentElement.setAttribute("data-font", saved);
+  }, []);
+
+  const handleFontChange = (f: FontChoice) => {
+    setFont(f);
+    localStorage.setItem(FONT_KEY, f);
+    document.documentElement.setAttribute("data-font", f);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -97,13 +114,55 @@ export default function Home() {
   return (
     <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="relative text-center mb-8">
         <h1 className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
           QuietTime
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
           매일의 큐티 습관
         </p>
+        {/* Font selector */}
+        <div className="absolute top-0 right-0 flex gap-1">
+          <button
+            onClick={() => handleFontChange("sans")}
+            className="w-7 h-7 rounded text-xs cursor-pointer transition-opacity"
+            style={{
+              background: font === "sans" ? "var(--accent)" : "var(--bg-card)",
+              color: font === "sans" ? "#fff" : "var(--text-muted)",
+              border: "1px solid var(--border)",
+              fontFamily: "var(--font-sans)",
+            }}
+            title="기본"
+          >
+            가
+          </button>
+          <button
+            onClick={() => handleFontChange("serif")}
+            className="w-7 h-7 rounded text-xs cursor-pointer transition-opacity"
+            style={{
+              background: font === "serif" ? "var(--accent)" : "var(--bg-card)",
+              color: font === "serif" ? "#fff" : "var(--text-muted)",
+              border: "1px solid var(--border)",
+              fontFamily: "var(--font-serif)",
+            }}
+            title="명조"
+          >
+            명
+          </button>
+          <button
+            onClick={() => handleFontChange("hand")}
+            className="w-7 h-7 rounded text-xs cursor-pointer transition-opacity"
+            style={{
+              background: font === "hand" ? "var(--accent)" : "var(--bg-card)",
+              color: font === "hand" ? "#fff" : "var(--text-muted)",
+              border: "1px solid var(--border)",
+              fontFamily: "var(--font-hand)",
+            }}
+            title="손글씨"
+          >
+            손
+          </button>
+        </div>
       </div>
 
       {/* Today's Passage */}

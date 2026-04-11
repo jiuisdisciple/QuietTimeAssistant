@@ -27,7 +27,18 @@
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
+  font-family: var(--font-active, var(--font-sans)), Arial, Helvetica, sans-serif;
+}
+
+/* Font preset classes applied to <html> via data attribute */
+html[data-font="sans"] body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+html[data-font="serif"] body {
+  font-family: var(--font-serif), "Noto Serif KR", serif;
+}
+html[data-font="hand"] body {
+  font-family: var(--font-hand), "Nanum Pen Script", cursive;
 }
 
 /* Scrollbar styling */

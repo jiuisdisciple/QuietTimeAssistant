@@ -47,20 +47,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (done) {
-      // Mark as done with timestamp
+      // Mark as done with timestamp — but ONLY set done_at if it's not already set
+      // (so editing after done doesn't overwrite the original completion time)
       const result = await sql`
         INSERT INTO devotions (date, content, passage_reference, done_at, auto_saved_at)
         VALUES (${date}, ${content}, ${passage_reference}, NOW(), NOW())
         ON CONFLICT (date) DO UPDATE SET
           content = ${content},
           passage_reference = ${passage_reference},
-          done_at = NOW(),
+          done_at = COALESCE(devotions.done_at, NOW()),
           auto_saved_at = NOW()
         RETURNING *
       `;
       return NextResponse.json(result.rows[0]);
     } else {
-      // Auto-save (no done_at update)
+      // Auto-save (never touches done_at, so editing after Done preserves timestamp)
       const result = await sql`
         INSERT INTO devotions (date, content, passage_reference, auto_saved_at)
         VALUES (${date}, ${content}, ${passage_reference}, NOW())
