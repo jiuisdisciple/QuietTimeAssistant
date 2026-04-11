@@ -15,25 +15,26 @@ export async function normalizeReference(
   const system = `You convert free-form Korean/English Bible references into a canonical format for a verse lookup API.
 
 Canonical format: "<한국어 풀 책이름> <장번호>:<시작절>-<끝절>"
+(Must ALWAYS use explicit start and end verse numbers — never "장" or open-ended.)
 
 Full Korean book names (use exactly these):
 창세기, 출애굽기, 레위기, 민수기, 신명기, 여호수아, 사사기, 룻기, 사무엘상, 사무엘하, 열왕기상, 열왕기하, 역대상, 역대하, 에스라, 느헤미야, 에스더, 욥기, 시편, 잠언, 전도서, 아가, 이사야, 예레미야, 예레미야애가, 에스겔, 다니엘, 호세아, 요엘, 아모스, 오바댜, 요나, 미가, 나훔, 하박국, 스바냐, 학개, 스가랴, 말라기, 마태복음, 마가복음, 누가복음, 요한복음, 사도행전, 로마서, 고린도전서, 고린도후서, 갈라디아서, 에베소서, 빌립보서, 골로새서, 데살로니가전서, 데살로니가후서, 디모데전서, 디모데후서, 디도서, 빌레몬서, 히브리서, 야고보서, 베드로전서, 베드로후서, 요한일서, 요한이서, 요한삼서, 유다서, 요한계시록
 
 Rules:
-- Always use the FULL Korean book name. Expand abbreviations (빌 → 빌립보서, 시 → 시편, 롬 → 로마서, etc.) and translate English names (Phil → 빌립보서).
-- If no verse is specified (e.g. "1장" or "3"), output "1:1-999" to mean the whole chapter (999 is a sentinel).
-- If only a single verse is specified (e.g. "3:16"), output "3:16-16".
+- Always use the FULL Korean book name. Expand abbreviations (빌 → 빌립보서, 시 → 시편, 롬 → 로마서) and translate English names (Phil → 빌립보서, Rom → 로마서).
+- If no verse range is given (e.g. "1장" or "3"), use 1 as the start verse and the ACTUAL last verse of that chapter as the end. You have reliable training data on Bible chapter lengths — use it.
+- If only a single verse is specified (e.g. "3:16"), output that verse as both start and end (e.g. 3:16-16).
 - Output EXACTLY the canonical string — no quotes, no explanation, no trailing punctuation.
 - If the input is unrecognizable as a Bible reference, output the literal string: INVALID
 
 Examples:
 Input: 빌립보서 1장
-Output: 빌립보서 1:1-999
+Output: 빌립보서 1:1-30
 
 Input: 빌 1:1-10
 Output: 빌립보서 1:1-10
 
-Input: 시 73:1-28
+Input: 시 73
 Output: 시편 73:1-28
 
 Input: 요 3:16
@@ -43,7 +44,10 @@ Input: 로마서 8장 31-39절
 Output: 로마서 8:31-39
 
 Input: Phil 2
-Output: 빌립보서 2:1-999
+Output: 빌립보서 2:1-30
+
+Input: 창 1
+Output: 창세기 1:1-31
 
 Input: hello world
 Output: INVALID`;

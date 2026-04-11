@@ -67,21 +67,12 @@ export async function POST(request: NextRequest) {
         "요한계시록",
       ];
       bookTitle = BOOK_IDS[parsed.book] || parsed.bookName;
-      // 999 is the "whole chapter" sentinel from normalizeReference.
-      // Render it as "X장" for a cleaner display.
-      const isWholeChapter =
-        parsed.startVerse === 1 && parsed.endVerse >= 999;
-      if (isWholeChapter) {
-        chapterVerse = `${parsed.chapter}장`;
-        fullReference = `${bookTitle} ${parsed.chapter}장`;
-      } else {
-        const verseRange =
-          parsed.endVerse && parsed.endVerse !== parsed.startVerse
-            ? `${parsed.startVerse}-${parsed.endVerse}`
-            : `${parsed.startVerse}`;
-        chapterVerse = `${parsed.chapter}:${verseRange}`;
-        fullReference = `${bookTitle} ${chapterVerse}`;
-      }
+      const verseRange =
+        parsed.endVerse && parsed.endVerse !== parsed.startVerse
+          ? `${parsed.startVerse}-${parsed.endVerse}`
+          : `${parsed.startVerse}`;
+      chapterVerse = `${parsed.chapter}:${verseRange}`;
+      fullReference = `${bookTitle} ${chapterVerse}`;
     } else {
       // Unparseable — store raw and hope for the best. Bible viewer
       // will show the friendly "no passage" message if requested.
