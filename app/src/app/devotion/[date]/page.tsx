@@ -250,9 +250,96 @@ export default function DevotionPage({
         </h1>
       )}
 
-      {/* Quick Action Buttons (right aligned, 4 buttons) */}
-      {passage && (
-        <div className="flex justify-end gap-2 mb-3">
+      {/* Action Row: 묵상 완료 group (left) + K/E/AI/QnA (right) */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        {/* Left: devotion status/actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(isToday || isDone) && !isFuture && (
+            <>
+              {saveIndicator}
+
+              {isToday && !isDone && (
+                <button
+                  onClick={handleDone}
+                  disabled={!content.trim() || saving}
+                  className="text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
+                  style={{ background: "var(--accent)", color: "#fff" }}
+                >
+                  묵상 완료
+                </button>
+              )}
+
+              {isDone && isToday && !editMode && (
+                <>
+                  <button
+                    onClick={handleCopyContent}
+                    className="p-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: contentCopied
+                        ? "var(--success)"
+                        : "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                    title="묵상 복사"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="p-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                    title="수정"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  </button>
+                  <span
+                    className="text-xs px-2 py-1 rounded-lg"
+                    style={{ background: "var(--bg-card)", color: "var(--success)" }}
+                  >
+                    완료
+                  </span>
+                </>
+              )}
+
+              {isDone && isToday && editMode && (
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+                  style={{
+                    background: "var(--bg-card)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  편집 종료
+                </button>
+              )}
+
+              {isDone && !isToday && (
+                <span
+                  className="text-sm px-3 py-1 rounded-lg"
+                  style={{ background: "var(--bg-card)", color: "var(--success)" }}
+                >
+                  완료됨
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Right: K / E / AI / QnA */}
+        {passage && (
+          <div className="flex items-center gap-1 shrink-0">
           {/* K button: closed book + 한 */}
           <button
             onClick={() => setScriptureModal("KRV")}
@@ -358,8 +445,9 @@ export default function DevotionPage({
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* AI Summary Panel */}
       {passage?.ai_summary && summaryOpen && (
@@ -389,119 +477,6 @@ export default function DevotionPage({
               </p>
             );
           })}
-        </div>
-      )}
-
-      {/* Action bar (right above editor): save indicator + 묵상 완료 / edit / copy */}
-      {(isToday || isDone) && !isFuture && (
-        <div className="flex items-center justify-end gap-2 mb-2 min-h-[28px]">
-          {saveIndicator}
-
-          {/* Before done: 묵상 완료 button */}
-          {isToday && !isDone && (
-            <button
-              onClick={handleDone}
-              disabled={!content.trim() || saving}
-              className="text-sm px-4 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
-              style={{
-                background: "var(--accent)",
-                color: "#fff",
-              }}
-            >
-              묵상 완료
-            </button>
-          )}
-
-          {/* After done (today): copy / edit / completed */}
-          {isDone && isToday && !editMode && (
-            <>
-              <button
-                onClick={handleCopyContent}
-                className="p-1.5 rounded-lg cursor-pointer"
-                style={{
-                  background: "var(--bg-card)",
-                  color: contentCopied
-                    ? "var(--success)"
-                    : "var(--text-secondary)",
-                  border: "1px solid var(--border)",
-                }}
-                title="묵상 복사"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-              <button
-                onClick={() => setEditMode(true)}
-                className="p-1.5 rounded-lg cursor-pointer"
-                style={{
-                  background: "var(--bg-card)",
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border)",
-                }}
-                title="수정"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
-              </button>
-              <span
-                className="text-xs px-2 py-1 rounded-lg"
-                style={{
-                  background: "var(--bg-card)",
-                  color: "var(--success)",
-                }}
-              >
-                완료
-              </span>
-            </>
-          )}
-
-          {/* After done + editing */}
-          {isDone && isToday && editMode && (
-            <button
-              onClick={() => setEditMode(false)}
-              className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-              style={{
-                background: "var(--bg-card)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              편집 종료
-            </button>
-          )}
-
-          {/* Past day: completed badge only */}
-          {isDone && !isToday && (
-            <span
-              className="text-sm px-3 py-1 rounded-lg"
-              style={{ background: "var(--bg-card)", color: "var(--success)" }}
-            >
-              완료됨
-            </span>
-          )}
         </div>
       )}
 
