@@ -144,41 +144,44 @@ export default function ChatPopup({
     >
         {/* Header */}
         <div
-          className="flex items-center justify-between p-4"
+          className="relative flex items-center justify-between p-4 shrink-0"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <div className="flex items-center gap-2">
+          <div>
             <h2
               className="text-base font-semibold"
               style={{ color: "var(--accent)" }}
             >
               QnA
             </h2>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               개혁신학 관점
-            </span>
+            </p>
           </div>
-          <div className="flex items-center gap-1">
-            {onPrev && (
+
+          {/* Nav arrows — always centered */}
+          {(onPrev || onNext) && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
               <button
                 onClick={onPrev}
-                className="px-2 py-1 rounded text-sm cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-base cursor-pointer"
                 style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
                 title="이전"
               >
                 &lt;
               </button>
-            )}
-            {onNext && (
               <button
                 onClick={onNext}
-                className="px-2 py-1 rounded text-sm cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-base cursor-pointer"
                 style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
                 title="다음"
               >
                 &gt;
               </button>
-            )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setShowSessionList(!showSessionList)}
               className="px-2 py-1 rounded text-xs cursor-pointer"
