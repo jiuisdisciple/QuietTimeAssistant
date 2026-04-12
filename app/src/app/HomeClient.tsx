@@ -305,7 +305,7 @@ export default function HomeClient({
                 style={{
                   background: "var(--bg-card)",
                   color: "var(--text-secondary)",
-                  border: "1px solid var(--border)",
+                  border: "1px solid var(--text-secondary)",
                 }}
               >
                 불러오기
@@ -319,7 +319,7 @@ export default function HomeClient({
                 style={{
                   background: "var(--bg-card)",
                   color: "var(--text-secondary)",
-                  border: "1px dashed var(--border)",
+                  border: "1px dashed var(--text-secondary)",
                 }}
               >
                 <span>+</span>
