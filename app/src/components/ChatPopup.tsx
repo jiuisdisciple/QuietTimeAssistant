@@ -19,12 +19,16 @@ interface ChatPopupProps {
   date: string;
   passageReference: string;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 export default function ChatPopup({
   date,
   passageReference,
   onClose,
+  onPrev,
+  onNext,
 }: ChatPopupProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
@@ -33,6 +37,7 @@ export default function ChatPopup({
   const [sending, setSending] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Load sessions on mount
   useEffect(() => {
@@ -68,6 +73,7 @@ export default function ChatPopup({
     if (!trimmed || sending) return;
 
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     setSending(true);
 
     // Optimistic update: show user message immediately
@@ -129,14 +135,13 @@ export default function ChatPopup({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div
-        className="w-full max-w-lg h-[80vh] rounded-xl flex flex-col"
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <div
+      className="w-full h-full rounded-xl flex flex-col"
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+      }}
+    >
         {/* Header */}
         <div
           className="flex items-center justify-between p-4"
@@ -154,6 +159,26 @@ export default function ChatPopup({
             </span>
           </div>
           <div className="flex items-center gap-1">
+            {onPrev && (
+              <button
+                onClick={onPrev}
+                className="px-2 py-1 rounded text-sm cursor-pointer"
+                style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
+                title="이전"
+              >
+                &lt;
+              </button>
+            )}
+            {onNext && (
+              <button
+                onClick={onNext}
+                className="px-2 py-1 rounded text-sm cursor-pointer"
+                style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
+                title="다음"
+              >
+                &gt;
+              </button>
+            )}
             <button
               onClick={() => setShowSessionList(!showSessionList)}
               className="px-2 py-1 rounded text-xs cursor-pointer"
@@ -284,14 +309,23 @@ export default function ChatPopup({
             {sending && (
               <div className="flex justify-start">
                 <div
-                  className="max-w-[80%] p-3 rounded-xl text-sm"
+                  className="p-3 rounded-xl flex items-center gap-1"
                   style={{
                     background: "var(--bg-secondary)",
-                    color: "var(--text-muted)",
                     border: "1px solid var(--border)",
                   }}
                 >
-                  생각 중...
+                  {[0, 150, 300].map((delay) => (
+                    <span
+                      key={delay}
+                      className="w-2 h-2 rounded-full animate-bounce"
+                      style={{
+                        background: "var(--text-muted)",
+                        animationDelay: `${delay}ms`,
+                        display: "inline-block",
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             )}
@@ -304,16 +338,24 @@ export default function ChatPopup({
           <div className="p-3" style={{ borderTop: "1px solid var(--border)" }}>
             <div className="flex items-end gap-2">
               <textarea
+                ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  const el = e.target;
+                  el.style.height = "auto";
+                  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder="질문을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)"
-                rows={2}
                 className="flex-1 p-2 rounded-lg text-sm resize-none outline-none"
                 style={{
                   background: "var(--bg-input)",
                   border: "1px solid var(--border)",
                   color: "var(--text-primary)",
+                  minHeight: "4.5rem",
+                  maxHeight: "7.5rem",
+                  overflowY: "auto",
                 }}
               />
               <button
@@ -331,6 +373,5 @@ export default function ChatPopup({
           </div>
         )}
       </div>
-    </div>
   );
 }

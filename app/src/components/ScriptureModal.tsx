@@ -11,12 +11,16 @@ interface ScriptureModalProps {
   reference: string;
   version: "KRV" | "ESV";
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 export default function ScriptureModal({
   reference,
   version,
   onClose,
+  onPrev,
+  onNext,
 }: ScriptureModalProps) {
   const [verses, setVerses] = useState<Verse[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -103,14 +107,13 @@ export default function ScriptureModal({
     highlighted.size > 0 ? `${highlighted.size}개 복사` : "전체 복사";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div
-        className="w-full max-w-lg h-[85vh] rounded-xl flex flex-col"
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-        }}
-      >
+    <div
+      className="w-full h-full rounded-xl flex flex-col"
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+      }}
+    >
         {/* Sticky Header */}
         <div
           className="flex items-center justify-between p-4 shrink-0"
@@ -128,6 +131,26 @@ export default function ScriptureModal({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {onPrev && (
+              <button
+                onClick={onPrev}
+                className="px-2 py-1 rounded text-sm cursor-pointer"
+                style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
+                title="이전"
+              >
+                &lt;
+              </button>
+            )}
+            {onNext && (
+              <button
+                onClick={onNext}
+                className="px-2 py-1 rounded text-sm cursor-pointer"
+                style={{ color: "var(--text-secondary)", background: "var(--bg-input)" }}
+                title="다음"
+              >
+                &gt;
+              </button>
+            )}
             {verses && verses.length > 0 && (
               <button
                 onClick={handleCopyAll}
@@ -253,6 +276,5 @@ export default function ScriptureModal({
           )}
         </div>
       </div>
-    </div>
   );
 }

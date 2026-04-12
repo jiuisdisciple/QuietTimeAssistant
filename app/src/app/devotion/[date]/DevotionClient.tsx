@@ -20,6 +20,9 @@ interface DevotionData {
   feedback_report: string | null;
 }
 
+type PanelId = "KRV" | "ESV" | "AI" | "QnA";
+const PANELS: PanelId[] = ["KRV", "ESV", "AI", "QnA"];
+
 export default function DevotionClient({
   params,
 }: {
@@ -29,11 +32,8 @@ export default function DevotionClient({
   const [passage, setPassage] = useState<PassageData | null>(null);
   const [, setDevotion] = useState<DevotionData | null>(null);
   const [content, setContent] = useState("");
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const [scriptureModal, setScriptureModal] = useState<
-    "KRV" | "ESV" | null
-  >(null);
-  const [chatOpen, setChatOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<PanelId | null>(null);
+  const [openedPanels, setOpenedPanels] = useState<Set<PanelId>>(new Set());
   const [prayerOpen, setPrayerOpen] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackReport, setFeedbackReport] = useState("");
@@ -45,6 +45,29 @@ export default function DevotionClient({
   const [contentCopied, setContentCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openPanel = (id: PanelId) => {
+    setOpenedPanels((prev) => new Set([...prev, id]));
+    setActivePanel(id);
+  };
+  const closePanel = () => {
+    setActivePanel(null);
+    setOpenedPanels(new Set());
+  };
+  const prevPanel = () => {
+    if (!activePanel) return;
+    const i = PANELS.indexOf(activePanel);
+    const prev = PANELS[(i - 1 + PANELS.length) % PANELS.length];
+    setOpenedPanels((p) => new Set([...p, prev]));
+    setActivePanel(prev);
+  };
+  const nextPanel = () => {
+    if (!activePanel) return;
+    const i = PANELS.indexOf(activePanel);
+    const next = PANELS[(i + 1) % PANELS.length];
+    setOpenedPanels((p) => new Set([...p, next]));
+    setActivePanel(next);
+  };
 
   const today = getKSTDate(0);
   const isToday = date === today;
@@ -257,16 +280,15 @@ export default function DevotionClient({
         <div className="flex items-center gap-2 flex-wrap">
           {(isToday || isDone) && !isFuture && (
             <>
-              {saveIndicator}
-
               {isToday && !isDone && (
                 <button
                   onClick={handleDone}
                   disabled={!content.trim() || saving}
-                  className="text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
                   style={{ background: "var(--accent)", color: "#fff" }}
                 >
                   묵상 완료
+                  {saveIndicator}
                 </button>
               )}
 
@@ -315,7 +337,7 @@ export default function DevotionClient({
               {isDone && isToday && editMode && (
                 <button
                   onClick={() => setEditMode(false)}
-                  className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer"
                   style={{
                     background: "var(--bg-card)",
                     color: "var(--text-secondary)",
@@ -323,6 +345,7 @@ export default function DevotionClient({
                   }}
                 >
                   편집 종료
+                  {saveIndicator}
                 </button>
               )}
 
@@ -343,7 +366,7 @@ export default function DevotionClient({
           <div className="flex items-center gap-1 shrink-0">
           {/* K button: closed book + 한 */}
           <button
-            onClick={() => setScriptureModal("KRV")}
+            onClick={() => openPanel("KRV")}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
             style={{
               background: "var(--bg-card)",
@@ -369,7 +392,7 @@ export default function DevotionClient({
           </button>
           {/* E button: open book + E */}
           <button
-            onClick={() => setScriptureModal("ESV")}
+            onClick={() => openPanel("ESV")}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors"
             style={{
               background: "var(--bg-card)",
@@ -396,12 +419,12 @@ export default function DevotionClient({
           </button>
           {/* AI button: sparkles icon */}
           <button
-            onClick={() => setSummaryOpen(!summaryOpen)}
+            onClick={() => activePanel === "AI" ? closePanel() : openPanel("AI")}
             disabled={!passage.ai_summary}
             className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: summaryOpen ? "var(--accent)" : "var(--bg-card)",
-              color: summaryOpen ? "#fff" : "var(--text-secondary)",
+              background: activePanel === "AI" ? "var(--accent)" : "var(--bg-card)",
+              color: activePanel === "AI" ? "#fff" : "var(--text-secondary)",
               border: "1px solid var(--border)",
             }}
             title="AI 개요"
@@ -423,7 +446,7 @@ export default function DevotionClient({
           </button>
           {/* QnA button: chat bubble */}
           <button
-            onClick={() => setChatOpen(true)}
+            onClick={() => openPanel("QnA")}
             className="flex items-center justify-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
             style={{
               background: "var(--bg-card)",
@@ -535,31 +558,81 @@ export default function DevotionClient({
         />
       )}
 
-      {/* AI Summary Modal */}
-      {summaryOpen && passage?.ai_summary && (
-        <SummaryModal
-          reference={passage.full_reference}
-          summary={passage.ai_summary}
-          onClose={() => setSummaryOpen(false)}
-        />
-      )}
-
-      {/* Scripture Modal */}
-      {scriptureModal && passage && (
-        <ScriptureModal
-          reference={passage.full_reference}
-          version={scriptureModal}
-          onClose={() => setScriptureModal(null)}
-        />
-      )}
-
-      {/* QnA Chat Popup */}
-      {chatOpen && (
-        <ChatPopup
-          date={date}
-          passageReference={passage?.full_reference || "(본문 정보 없음)"}
-          onClose={() => setChatOpen(false)}
-        />
+      {/* Unified panel overlay — all opened panels stay mounted for scroll preservation */}
+      {activePanel !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="relative w-full max-w-lg" style={{ height: "85vh" }}>
+            {openedPanels.has("KRV") && passage && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  visibility: activePanel === "KRV" ? "visible" : "hidden",
+                  pointerEvents: activePanel === "KRV" ? "auto" : "none",
+                }}
+              >
+                <ScriptureModal
+                  reference={passage.full_reference}
+                  version="KRV"
+                  onClose={closePanel}
+                  onPrev={prevPanel}
+                  onNext={nextPanel}
+                />
+              </div>
+            )}
+            {openedPanels.has("ESV") && passage && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  visibility: activePanel === "ESV" ? "visible" : "hidden",
+                  pointerEvents: activePanel === "ESV" ? "auto" : "none",
+                }}
+              >
+                <ScriptureModal
+                  reference={passage.full_reference}
+                  version="ESV"
+                  onClose={closePanel}
+                  onPrev={prevPanel}
+                  onNext={nextPanel}
+                />
+              </div>
+            )}
+            {openedPanels.has("AI") && passage?.ai_summary && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  visibility: activePanel === "AI" ? "visible" : "hidden",
+                  pointerEvents: activePanel === "AI" ? "auto" : "none",
+                }}
+              >
+                <SummaryModal
+                  reference={passage.full_reference}
+                  summary={passage.ai_summary}
+                  onClose={closePanel}
+                  onPrev={prevPanel}
+                  onNext={nextPanel}
+                />
+              </div>
+            )}
+            {openedPanels.has("QnA") && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  visibility: activePanel === "QnA" ? "visible" : "hidden",
+                  pointerEvents: activePanel === "QnA" ? "auto" : "none",
+                  height: "80vh",
+                }}
+              >
+                <ChatPopup
+                  date={date}
+                  passageReference={passage?.full_reference || "(본문 정보 없음)"}
+                  onClose={closePanel}
+                  onPrev={prevPanel}
+                  onNext={nextPanel}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Prayer Popup (after 묵상 완료) */}
