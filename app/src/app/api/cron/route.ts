@@ -4,20 +4,16 @@ import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary } from "@/lib/ai";
 import { getKSTDate } from "@/lib/date";
 
-async function ensurePassage(dateStr: string) {
-  // Skip if already fetched with summary
-  const existing = await sql`
-    SELECT * FROM passages WHERE date = ${dateStr} AND ai_summary IS NOT NULL
-  `;
-  if (existing.rows.length > 0) {
-    return { skipped: true, date: dateStr };
-  }
-
+// Fetch tomorrow's passage from cdmb and insert it for every approved user
+// who doesn't already have a row for that date (DO NOTHING preserves custom entries).
+// Called from Vercel Cron at 9:00, 9:30, 10:00, 10:30, 11:00, 11:30 PM KST.
+async function fetchTomorrowForAllUsers(dateStr: string) {
   const passage = await fetchTodayPassage(dateStr);
   if (!passage) {
-    return { error: "Not available", date: dateStr };
+    return { skipped: true, reason: "not_available", date: dateStr };
   }
 
+  // Generate AI summary once; reuse across all users
   let aiSummary: string | null = null;
   try {
     aiSummary = await generateSummary(passage.fullReference);
@@ -25,25 +21,30 @@ async function ensurePassage(dateStr: string) {
     console.error("AI summary error for", dateStr, e);
   }
 
-  await sql`
-    INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
-    VALUES (${dateStr}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, ${aiSummary})
-    ON CONFLICT (date) DO UPDATE SET
-      book_title = ${passage.bookTitle},
-      chapter_verse = ${passage.chapterVerse},
-      full_reference = ${passage.fullReference},
-      ai_summary = COALESCE(${aiSummary}, passages.ai_summary)
-  `;
+  const users = await sql`SELECT id FROM users WHERE status = 'approved'`;
+
+  let inserted = 0;
+  for (const user of users.rows) {
+    const result = await sql`
+      INSERT INTO passages (user_id, date, book_title, chapter_verse, full_reference, ai_summary)
+      VALUES (${user.id}, ${dateStr}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, ${aiSummary})
+      ON CONFLICT (user_id, date) DO NOTHING
+    `;
+    if (result.rowCount && result.rowCount > 0) inserted++;
+  }
 
   return {
     success: true,
     date: dateStr,
     reference: passage.fullReference,
     hasSummary: !!aiSummary,
+    usersInserted: inserted,
+    usersTotal: users.rows.length,
   };
 }
 
-// Vercel Cron: runs at 5:00 AM KST daily
+// Vercel Cron: runs at 9:00, 9:30, 10:00, 10:30, 11:00, 11:30 PM KST
+// (0,30 12,13,14 * * * in UTC)
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -51,19 +52,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const today = getKSTDate(0);
     const tomorrow = getKSTDate(1);
-
-    // Fetch both today and tomorrow in parallel
-    const [todayResult, tomorrowResult] = await Promise.all([
-      ensurePassage(today),
-      ensurePassage(tomorrow),
-    ]);
-
-    return NextResponse.json({
-      today: todayResult,
-      tomorrow: tomorrowResult,
-    });
+    const result = await fetchTomorrowForAllUsers(tomorrow);
+    return NextResponse.json({ tomorrow: result });
   } catch (error) {
     console.error("Cron error:", error);
     return NextResponse.json(

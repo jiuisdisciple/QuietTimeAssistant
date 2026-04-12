@@ -41,7 +41,6 @@ const FONT_KEY = "quiettime-font";
 
 export default function HomeClient({
   userName,
-  isAdmin,
 }: {
   userName: string;
   isAdmin: boolean;
@@ -194,53 +193,63 @@ export default function HomeClient({
               >
                 {todayPassage.full_reference}
               </p>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setManualEntry({
-                      date: today,
-                      label: "오늘",
-                      initialReference: todayPassage.full_reference,
-                    })
-                  }
-                  className="p-1 rounded cursor-pointer hover:opacity-80"
-                  style={{ color: "var(--text-muted)" }}
-                  title="본문 수정"
+              <button
+                type="button"
+                onClick={() =>
+                  setManualEntry({
+                    date: today,
+                    label: "오늘",
+                    initialReference: todayPassage.full_reference,
+                  })
+                }
+                className="p-1 rounded cursor-pointer hover:opacity-80"
+                style={{ color: "var(--text-muted)" }}
+                title="본문 수정"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                  </svg>
-                </button>
-              )}
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
             </div>
-          ) : isAdmin ? (
-            <button
-              type="button"
-              onClick={() =>
-                setManualEntry({ date: today, label: "오늘" })
-              }
-              className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
-              style={{
-                background: "var(--bg-card)",
-                color: "var(--accent)",
-                border: "1px dashed var(--accent)",
-              }}
-            >
-              <span>+</span>
-              <span>직접 추가</span>
-            </button>
-          ) : null}
+          ) : (
+            <div className="mt-1 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => refetchPassage(today)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--accent)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                불러오기
+              </button>
+              <button
+                type="button"
+                onClick={() => setManualEntry({ date: today, label: "오늘" })}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--accent)",
+                  border: "1px dashed var(--accent)",
+                }}
+              >
+                <span>+</span>
+                <span>직접 추가</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tomorrow */}
@@ -259,53 +268,65 @@ export default function HomeClient({
               >
                 {tomorrowPassage.full_reference}
               </p>
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setManualEntry({
-                      date: tomorrow,
-                      label: "내일",
-                      initialReference: tomorrowPassage.full_reference,
-                    })
-                  }
-                  className="p-1 rounded cursor-pointer hover:opacity-80"
-                  style={{ color: "var(--text-muted)" }}
-                  title="본문 수정"
+              <button
+                type="button"
+                onClick={() =>
+                  setManualEntry({
+                    date: tomorrow,
+                    label: "내일",
+                    initialReference: tomorrowPassage.full_reference,
+                  })
+                }
+                className="p-1 rounded cursor-pointer hover:opacity-80"
+                style={{ color: "var(--text-muted)" }}
+                title="본문 수정"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                  </svg>
-                </button>
-              )}
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              </button>
             </div>
-          ) : isAdmin ? (
-            <button
-              type="button"
-              onClick={() =>
-                setManualEntry({ date: tomorrow, label: "내일" })
-              }
-              className="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
-              style={{
-                background: "var(--bg-card)",
-                color: "var(--text-secondary)",
-                border: "1px dashed var(--border)",
-              }}
-            >
-              <span>+</span>
-              <span>직접 추가</span>
-            </button>
-          ) : null}
+          ) : (
+            <div className="mt-1 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => refetchPassage(tomorrow)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                불러오기
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualEntry({ date: tomorrow, label: "내일" })
+                }
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
+                style={{
+                  background: "var(--bg-card)",
+                  color: "var(--text-secondary)",
+                  border: "1px dashed var(--border)",
+                }}
+              >
+                <span>+</span>
+                <span>직접 추가</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -4,28 +4,29 @@ import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary, normalizeReference } from "@/lib/ai";
 import { getKSTDate } from "@/lib/date";
 import { parseReference } from "@/lib/bible";
-import { requireAdmin } from "@/lib/auth";
+import { requireApprovedUser } from "@/lib/auth";
 
 export async function DELETE(request: NextRequest) {
+  let user;
   try {
-    await requireAdmin();
+    user = await requireApprovedUser();
   } catch {
-    return NextResponse.json({ error: "unauthorized" }, { status: 403 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const date = request.nextUrl.searchParams.get("date");
   if (!date) {
     return NextResponse.json({ error: "date required" }, { status: 400 });
   }
-  await sql`DELETE FROM passages WHERE date = ${date}`;
+  await sql`DELETE FROM passages WHERE date = ${date} AND user_id = ${user.id}`;
   return NextResponse.json({ deleted: date });
 }
 
-// Manual passage entry. Approved users can override or seed a passage
-// for a given date — useful when cdmb.link doesn't publish one (e.g.
-// Sundays) or the user wants to study a different text.
+// Manual passage entry — any approved user can set their own passage for a date.
+// Useful on Sundays (no official QT passage) or when studying a different text.
 export async function POST(request: NextRequest) {
+  let user;
   try {
-    await requireAdmin();
+    user = await requireApprovedUser();
     const body = await request.json();
     const { date, reference } = body as {
       date?: string;
@@ -89,9 +90,9 @@ export async function POST(request: NextRequest) {
     // Upsert — overwrites any existing cached entry and clears AI summary
     // so it will be regenerated for the new reference.
     const saved = await sql`
-      INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
-      VALUES (${date}, ${bookTitle}, ${chapterVerse}, ${fullReference}, NULL)
-      ON CONFLICT (date) DO UPDATE SET
+      INSERT INTO passages (user_id, date, book_title, chapter_verse, full_reference, ai_summary)
+      VALUES (${user.id}, ${date}, ${bookTitle}, ${chapterVerse}, ${fullReference}, NULL)
+      ON CONFLICT (user_id, date) DO UPDATE SET
         book_title = ${bookTitle},
         chapter_verse = ${chapterVerse},
         full_reference = ${fullReference},
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Generate AI summary in-request. Personal app, user is waiting.
     try {
       const summary = await generateSummary(fullReference);
-      await sql`UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}`;
+      await sql`UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}`;
       row.ai_summary = summary;
     } catch (e) {
       console.error("Manual passage AI summary failed:", e);
@@ -111,10 +112,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(row);
   } catch (error) {
-    if (String(error).includes("NOT_REGISTERED")) {
+    if (String(error).includes("USER_NOT_REGISTERED")) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-    if (String(error).includes("NOT_APPROVED")) {
+    if (String(error).includes("USER_NOT_APPROVED")) {
       return NextResponse.json({ error: "not_approved" }, { status: 403 });
     }
     console.error("Manual passage POST error:", error);
@@ -126,13 +127,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  let user;
+  try {
+    user = await requireApprovedUser();
+  } catch {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const date = request.nextUrl.searchParams.get("date") || getKSTDate(0);
   const lazy = request.nextUrl.searchParams.get("lazy") === "1";
 
   try {
-    // Check if we already have this passage cached
+    // Check if we already have this passage cached for this user
     const cached = await sql`
-      SELECT * FROM passages WHERE date = ${date}
+      SELECT * FROM passages WHERE user_id = ${user.id} AND date = ${date}
     `;
 
     if (cached.rows.length > 0) {
@@ -146,10 +154,9 @@ export async function GET(request: NextRequest) {
         !row.book_title;
 
       if (looksBad) {
-        // In lazy mode, don't hit cdmb — just drop the bad row and report
-        // not_cached so the UI can show the manual-entry affordance.
+        // In lazy mode, drop the bad row and report not_cached
         if (lazy) {
-          await sql`DELETE FROM passages WHERE date = ${date}`;
+          await sql`DELETE FROM passages WHERE user_id = ${user.id} AND date = ${date}`;
           return NextResponse.json(
             { error: "not_cached" },
             { status: 404 }
@@ -165,14 +172,13 @@ export async function GET(request: NextRequest) {
                 chapter_verse = ${fresh.chapterVerse},
                 full_reference = ${fresh.fullReference},
                 ai_summary = NULL
-            WHERE date = ${date}
+            WHERE user_id = ${user.id} AND date = ${date}
             RETURNING *
           `;
           const newRow = updated.rows[0];
-          // Generate new AI summary with correct reference
           try {
             const summary = await generateSummary(newRow.full_reference);
-            await sql`UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}`;
+            await sql`UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}`;
             newRow.ai_summary = summary;
           } catch (e) {
             console.error("AI summary regeneration failed:", e);
@@ -180,9 +186,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(newRow);
         }
 
-        // Bad row and refetch failed — purge so the UI can surface the
-        // manual-entry affordance instead of rendering an empty reference.
-        await sql`DELETE FROM passages WHERE date = ${date}`;
+        await sql`DELETE FROM passages WHERE user_id = ${user.id} AND date = ${date}`;
         return NextResponse.json(
           { error: "not_cached" },
           { status: 404 }
@@ -194,7 +198,7 @@ export async function GET(request: NextRequest) {
         try {
           const summary = await generateSummary(row.full_reference);
           await sql`
-            UPDATE passages SET ai_summary = ${summary} WHERE date = ${date}
+            UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}
           `;
           row.ai_summary = summary;
         } catch (e) {
@@ -204,7 +208,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(row);
     }
 
-    // Lazy mode: don't fetch externally, don't generate AI
+    // Lazy mode: don't fetch externally
     if (lazy) {
       return NextResponse.json(
         { error: "not_cached" },
@@ -225,9 +229,9 @@ export async function GET(request: NextRequest) {
     let savedRow;
     try {
       const result = await sql`
-        INSERT INTO passages (date, book_title, chapter_verse, full_reference, ai_summary)
-        VALUES (${date}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, NULL)
-        ON CONFLICT (date) DO UPDATE SET
+        INSERT INTO passages (user_id, date, book_title, chapter_verse, full_reference, ai_summary)
+        VALUES (${user.id}, ${date}, ${passage.bookTitle}, ${passage.chapterVerse}, ${passage.fullReference}, NULL)
+        ON CONFLICT (user_id, date) DO UPDATE SET
           book_title = ${passage.bookTitle},
           chapter_verse = ${passage.chapterVerse},
           full_reference = ${passage.fullReference}
@@ -236,7 +240,6 @@ export async function GET(request: NextRequest) {
       savedRow = result.rows[0];
     } catch (dbError) {
       console.error("DB insert error:", dbError);
-      // If DB fails, still return the fetched passage
       return NextResponse.json({
         date,
         book_title: passage.bookTitle,
@@ -250,12 +253,11 @@ export async function GET(request: NextRequest) {
     try {
       const aiSummary = await generateSummary(passage.fullReference);
       await sql`
-        UPDATE passages SET ai_summary = ${aiSummary} WHERE date = ${date}
+        UPDATE passages SET ai_summary = ${aiSummary} WHERE user_id = ${user.id} AND date = ${date}
       `;
       savedRow.ai_summary = aiSummary;
     } catch (aiError) {
       console.error("AI summary generation failed:", aiError);
-      // Keep going — passage info is already saved
     }
 
     return NextResponse.json(savedRow);

@@ -55,6 +55,23 @@ export async function initDB() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_devotions_user_id_date_key ON devotions(user_id, date)
   `;
 
+  // Migration: make passages per-user
+  await sql`
+    ALTER TABLE passages ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+  `;
+  // Drop the old shared unique constraint on date alone (may be named passages_date_key)
+  await sql`
+    ALTER TABLE passages DROP CONSTRAINT IF EXISTS passages_date_key
+  `;
+  // Add per-user unique index
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_passages_user_id_date ON passages(user_id, date)
+  `;
+  // Remove legacy shared rows (no user_id) — they're stale shared cache, not personal data
+  await sql`
+    DELETE FROM passages WHERE user_id IS NULL
+  `;
+
   // Personal data: chat sessions (per-user)
   await sql`
     CREATE TABLE IF NOT EXISTS chat_sessions (
