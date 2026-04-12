@@ -176,13 +176,6 @@ export async function GET(request: NextRequest) {
             RETURNING *
           `;
           const newRow = updated.rows[0];
-          try {
-            const summary = await generateSummary(newRow.full_reference);
-            await sql`UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}`;
-            newRow.ai_summary = summary;
-          } catch (e) {
-            console.error("AI summary regeneration failed:", e);
-          }
           return NextResponse.json(newRow);
         }
 
@@ -193,18 +186,6 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // If cached but missing AI summary, try to generate it now
-      if (!row.ai_summary) {
-        try {
-          const summary = await generateSummary(row.full_reference);
-          await sql`
-            UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}
-          `;
-          row.ai_summary = summary;
-        } catch (e) {
-          console.error("AI summary generation failed:", e);
-        }
-      }
       return NextResponse.json(row);
     }
 
@@ -247,17 +228,6 @@ export async function GET(request: NextRequest) {
         full_reference: passage.fullReference,
         ai_summary: null,
       });
-    }
-
-    // Try to generate AI summary (non-blocking failure)
-    try {
-      const aiSummary = await generateSummary(passage.fullReference);
-      await sql`
-        UPDATE passages SET ai_summary = ${aiSummary} WHERE user_id = ${user.id} AND date = ${date}
-      `;
-      savedRow.ai_summary = aiSummary;
-    } catch (aiError) {
-      console.error("AI summary generation failed:", aiError);
     }
 
     return NextResponse.json(savedRow);
