@@ -41,8 +41,10 @@ const FONT_KEY = "quiettime-font";
 
 export default function HomeClient({
   userName,
+  isAdmin,
 }: {
   userName: string;
+  isAdmin: boolean;
 }) {
   const [todayPassage, setTodayPassage] = useState<Passage | null>(null);
   const [tomorrowPassage, setTomorrowPassage] = useState<Passage | null>(null);
@@ -192,35 +194,37 @@ export default function HomeClient({
               >
                 {todayPassage.full_reference}
               </p>
-              <button
-                type="button"
-                onClick={() =>
-                  setManualEntry({
-                    date: today,
-                    label: "오늘",
-                    initialReference: todayPassage.full_reference,
-                  })
-                }
-                className="p-1 rounded cursor-pointer hover:opacity-80"
-                style={{ color: "var(--text-muted)" }}
-                title="본문 수정"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setManualEntry({
+                      date: today,
+                      label: "오늘",
+                      initialReference: todayPassage.full_reference,
+                    })
+                  }
+                  className="p-1 rounded cursor-pointer hover:opacity-80"
+                  style={{ color: "var(--text-muted)" }}
+                  title="본문 수정"
                 >
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  </svg>
+                </button>
+              )}
             </div>
-          ) : (
+          ) : isAdmin ? (
             <button
               type="button"
               onClick={() =>
@@ -236,7 +240,7 @@ export default function HomeClient({
               <span>+</span>
               <span>직접 추가</span>
             </button>
-          )}
+          ) : null}
         </div>
 
         {/* Tomorrow */}
@@ -255,35 +259,37 @@ export default function HomeClient({
               >
                 {tomorrowPassage.full_reference}
               </p>
-              <button
-                type="button"
-                onClick={() =>
-                  setManualEntry({
-                    date: tomorrow,
-                    label: "내일",
-                    initialReference: tomorrowPassage.full_reference,
-                  })
-                }
-                className="p-1 rounded cursor-pointer hover:opacity-80"
-                style={{ color: "var(--text-muted)" }}
-                title="본문 수정"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setManualEntry({
+                      date: tomorrow,
+                      label: "내일",
+                      initialReference: tomorrowPassage.full_reference,
+                    })
+                  }
+                  className="p-1 rounded cursor-pointer hover:opacity-80"
+                  style={{ color: "var(--text-muted)" }}
+                  title="본문 수정"
                 >
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  </svg>
+                </button>
+              )}
             </div>
-          ) : (
+          ) : isAdmin ? (
             <button
               type="button"
               onClick={() =>
@@ -299,7 +305,7 @@ export default function HomeClient({
               <span>+</span>
               <span>직접 추가</span>
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

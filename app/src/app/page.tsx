@@ -10,5 +10,5 @@ export default async function HomePage() {
   if (user.status !== "approved") {
     redirect("/pending");
   }
-  return <HomeClient userName={user.name} />;
+  return <HomeClient userName={user.name} isAdmin={user.is_admin} />;
 }

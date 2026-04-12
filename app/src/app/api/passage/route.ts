@@ -4,9 +4,14 @@ import { fetchTodayPassage } from "@/lib/scraper";
 import { generateSummary, normalizeReference } from "@/lib/ai";
 import { getKSTDate } from "@/lib/date";
 import { parseReference } from "@/lib/bible";
-import { requireApprovedUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 export async function DELETE(request: NextRequest) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "unauthorized" }, { status: 403 });
+  }
   const date = request.nextUrl.searchParams.get("date");
   if (!date) {
     return NextResponse.json({ error: "date required" }, { status: 400 });
@@ -20,7 +25,7 @@ export async function DELETE(request: NextRequest) {
 // Sundays) or the user wants to study a different text.
 export async function POST(request: NextRequest) {
   try {
-    await requireApprovedUser();
+    await requireAdmin();
     const body = await request.json();
     const { date, reference } = body as {
       date?: string;
