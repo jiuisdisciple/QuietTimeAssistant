@@ -281,15 +281,17 @@ export default function DevotionClient({
           {(isToday || isDone) && !isFuture && (
             <>
               {isToday && !isDone && (
-                <button
-                  onClick={handleDone}
-                  disabled={!content.trim() || saving}
-                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
-                  style={{ background: "var(--accent)", color: "#fff" }}
-                >
-                  묵상 완료
+                <>
+                  <button
+                    onClick={handleDone}
+                    disabled={!content.trim() || saving}
+                    className="text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-40"
+                    style={{ background: "var(--accent)", color: "#fff" }}
+                  >
+                    묵상 완료
+                  </button>
                   {saveIndicator}
-                </button>
+                </>
               )}
 
               {isDone && isToday && !editMode && (
@@ -335,18 +337,20 @@ export default function DevotionClient({
               )}
 
               {isDone && isToday && editMode && (
-                <button
-                  onClick={() => setEditMode(false)}
-                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg cursor-pointer"
-                  style={{
-                    background: "var(--bg-card)",
-                    color: "var(--text-secondary)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  편집 종료
+                <>
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="text-sm px-3 py-1.5 rounded-lg cursor-pointer"
+                    style={{
+                      background: "var(--bg-card)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    편집 종료
+                  </button>
                   {saveIndicator}
-                </button>
+                </>
               )}
 
               {isDone && !isToday && (

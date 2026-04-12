@@ -50,6 +50,11 @@ export async function initDB() {
     ALTER TABLE devotions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
   `;
 
+  // Migration: ensure unique constraint exists for ON CONFLICT to work
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_devotions_user_id_date_key ON devotions(user_id, date)
+  `;
+
   // Personal data: chat sessions (per-user)
   await sql`
     CREATE TABLE IF NOT EXISTS chat_sessions (
