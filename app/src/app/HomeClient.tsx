@@ -74,7 +74,7 @@ export default function HomeClient({
   useEffect(() => {
     Promise.all([
       fetch(`/api/passage?date=${today}`).then((r) => r.json()),
-      fetch(`/api/passage?date=${tomorrow}&lazy=1`).then((r) => r.json()),
+      fetch(`/api/passage?date=${tomorrow}`).then((r) => r.json()),
       fetch("/api/devotion?limit=30").then((r) => r.json()),
       fetch("/api/stats").then((r) => r.json()),
     ])
