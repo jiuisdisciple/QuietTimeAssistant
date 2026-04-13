@@ -63,10 +63,10 @@ export default function SummaryModal({
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={onClose}
-              className="text-2xl leading-none px-2 cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-xl cursor-pointer hover:opacity-70"
               style={{ color: "var(--text-secondary)" }}
               title="닫기"
             >

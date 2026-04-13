@@ -623,7 +623,6 @@ export default function DevotionClient({
                 style={{
                   visibility: activePanel === "QnA" ? "visible" : "hidden",
                   pointerEvents: activePanel === "QnA" ? "auto" : "none",
-                  height: "80vh",
                 }}
               >
                 <ChatPopup

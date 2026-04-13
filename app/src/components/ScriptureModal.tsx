@@ -153,22 +153,21 @@ export default function ScriptureModal({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {verses && verses.length > 0 && (
               <button
                 onClick={handleCopyAll}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-colors"
                 style={{
                   background: "var(--bg-input)",
                   color: copied ? "var(--success)" : "var(--text-secondary)",
-                  border: "1px solid var(--border)",
                 }}
-                title="복사"
+                title={copied ? "복사됨" : copyLabel}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -179,12 +178,11 @@ export default function ScriptureModal({
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                 </svg>
-                {copied ? "복사됨" : copyLabel}
               </button>
             )}
             <button
               onClick={onClose}
-              className="text-2xl leading-none px-2 cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-xl cursor-pointer hover:opacity-70"
               style={{ color: "var(--text-secondary)" }}
               title="닫기"
             >

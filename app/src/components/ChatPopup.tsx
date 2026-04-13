@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface Message {
   id?: number;
@@ -38,6 +38,7 @@ export default function ChatPopup({
   const [showSessionList, setShowSessionList] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const prevSendingRef = useRef(false);
 
   // Load sessions on mount
   useEffect(() => {
@@ -63,10 +64,21 @@ export default function ChatPopup({
     }
   }, [currentSessionId]);
 
-  // Scroll to bottom when messages change
+  // Scroll to show typing dots when user sends — but don't move on response arrival
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, sending]);
+    if (sending && !prevSendingRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevSendingRef.current = sending;
+  }, [sending]);
+
+  // Scroll to bottom when switching sessions (instant, not smooth)
+  const scrollToBottomInstant = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+  }, []);
+  useEffect(() => {
+    scrollToBottomInstant();
+  }, [currentSessionId, scrollToBottomInstant]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -182,30 +194,39 @@ export default function ChatPopup({
           )}
 
           <div className="flex items-center gap-1">
+            {/* Clock = session history */}
             <button
               onClick={() => setShowSessionList(!showSessionList)}
-              className="px-2 py-1 rounded text-xs cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer"
               style={{
-                color: "var(--text-secondary)",
+                color: showSessionList ? "var(--accent)" : "var(--text-secondary)",
                 background: "var(--bg-input)",
               }}
+              title="대화 기록"
             >
-              세션 {sessions.length > 0 ? `(${sessions.length})` : ""}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
             </button>
+            {/* + = new conversation */}
             <button
               onClick={handleNewSession}
-              className="px-2 py-1 rounded text-xs cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-xl cursor-pointer"
               style={{
                 color: "var(--text-secondary)",
                 background: "var(--bg-input)",
               }}
+              title="새 대화"
             >
-              + 새 대화
+              +
             </button>
+            {/* × = close */}
             <button
               onClick={onClose}
-              className="text-2xl leading-none px-2 rounded hover:opacity-70 cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-xl cursor-pointer hover:opacity-70"
               style={{ color: "var(--text-secondary)" }}
+              title="닫기"
             >
               ×
             </button>
