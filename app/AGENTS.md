@@ -50,6 +50,10 @@ Personal Korean daily devotion (큐티) app. Single-owner, multi-user with admin
 - Fonts: Geist (sans), Noto Serif KR (serif), Gowun Dodum (hand). Do NOT reintroduce Nanum Pen Script — it was rejected for readability.
 - Don't add emojis to UI unless the user explicitly asks. A few existing emoji buttons (📖, 💬) are fine to keep.
 
+## Vercel deployment (vercel.json)
+- Hosted on Vercel **Hobby plan** — cron jobs must run **at most once per day**. Do not use comma-separated times (e.g. `0,30 15 * * *`) in the cron schedule; that counts as multiple runs and blocks deployment.
+- Current cron: `"0 15 * * *"` → midnight KST (15:00 UTC). Keep it a single expression.
+
 ## What NOT to do
 - Don't create new markdown docs (README, NOTES, CHANGELOG, etc.) unless the user explicitly asks.
 - Don't add error-handling/fallback code for scenarios that can't happen. Trust framework guarantees; validate only at system boundaries.
