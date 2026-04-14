@@ -78,7 +78,7 @@ Output: INVALID`;
 export async function generateSummary(
   passageReference: string
 ): Promise<string> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: MODEL,
     messages: [
       {
@@ -121,7 +121,7 @@ export async function checkDevotion(
   passageReference: string,
   devotionContent: string
 ): Promise<string> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: MODEL,
     messages: [
       {
@@ -177,7 +177,7 @@ export async function chatWithQnA(
 
 현재 큐티 본문: ${passageReference}`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: MODEL,
     messages: [
       { role: "system", content: systemPrompt },
