@@ -54,6 +54,17 @@ Personal Korean daily devotion (큐티) app. Single-owner, multi-user with admin
 - Hosted on Vercel **Hobby plan** — cron jobs must run **at most once per day**. Do not use comma-separated times (e.g. `0,30 15 * * *`) in the cron schedule; that counts as multiple runs and blocks deployment.
 - Current cron: `"0 15 * * *"` → midnight KST (15:00 UTC). Keep it a single expression.
 
+## Vercel CLI deployment (manual deploy)
+- Always run `npx vercel --prod` from the **repo root** (`D:\FELOWSHIP\QuietTimeAssistant`), NOT from `app/`. The Root Directory is set to `app` in Vercel, so running from inside `app/` causes it to look for `app/app`.
+- Link to the correct project with `npx vercel link` — choose `quiet-time-assistant`, not `app` (a stale project that was accidentally created).
+- `.vercelignore` excludes `.env*` files from deployment so local dev keys don't override Vercel project env vars.
+- The OpenAI client must be lazily initialized (not at module top level) — otherwise Next.js page data collection at build time throws "Missing credentials" and the build fails.
+
+## DB migrations (src/lib/db.ts)
+- `initDB()` is idempotent and safe to re-run, but it must be explicitly called after schema changes land in production.
+- To run migrations: `POST https://quiet-time-assistant.vercel.app/api/init` (PowerShell: `Invoke-WebRequest -Method POST https://quiet-time-assistant.vercel.app/api/init`).
+- The `passages` table gained `user_id` in a migration — if the column is missing in prod, `/api/passage` will error with `column "user_id" does not exist`. Fix by calling `/api/init`.
+
 ## What NOT to do
 - Don't create new markdown docs (README, NOTES, CHANGELOG, etc.) unless the user explicitly asks.
 - Don't add error-handling/fallback code for scenarios that can't happen. Trust framework guarantees; validate only at system boundaries.
