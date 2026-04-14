@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 
 const MODEL = "gpt-5";
 const NANO_MODEL = "gpt-4.1-nano";
@@ -53,7 +57,7 @@ Input: hello world
 Output: INVALID`;
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: NANO_MODEL,
       messages: [
         { role: "system", content: system },
