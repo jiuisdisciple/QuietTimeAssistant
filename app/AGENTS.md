@@ -52,7 +52,7 @@ Personal Korean daily devotion (큐티) app. Single-owner, multi-user with admin
 
 ## Vercel deployment (vercel.json)
 - Hosted on Vercel **Hobby plan** — cron jobs must run **at most once per day**. Do not use comma-separated times (e.g. `0,30 15 * * *`) in the cron schedule; that counts as multiple runs and blocks deployment.
-- Current cron: `"0 15 * * *"` → midnight KST (15:00 UTC). Keep it a single expression.
+- Current cron: `"0 12 * * *"` → 9 PM KST (12:00 UTC). CDMB publishes the next day's passage by ~9 PM KST, so the cron must run then — NOT at midnight, which is too early for the following day's data. Keep it a single expression.
 
 ## Vercel CLI deployment (manual deploy)
 - Always run `npx vercel --prod` from the **repo root** (`D:\FELOWSHIP\QuietTimeAssistant`), NOT from `app/`. The Root Directory is set to `app` in Vercel, so running from inside `app/` causes it to look for `app/app`.

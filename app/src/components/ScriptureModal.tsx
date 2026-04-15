@@ -72,6 +72,17 @@ export default function ScriptureModal({
     });
   };
 
+  const getSelectedReference = () => {
+    if (highlighted.size === 0) return reference;
+    // Parse "요한복음 15:1-12" → "요한복음 15" then append selected verse range
+    const match = reference.match(/^(.+)\s(\d+):/);
+    if (!match) return reference;
+    const bookChapter = `${match[1]} ${match[2]}`;
+    const sorted = [...highlighted].sort((a, b) => a - b);
+    if (sorted.length === 1) return `${bookChapter}:${sorted[0]}`;
+    return `${bookChapter}:${sorted[0]}-${sorted[sorted.length - 1]}`;
+  };
+
   const handleCopyAll = async () => {
     if (!verses) return;
     const toCopy =
@@ -86,7 +97,7 @@ export default function ScriptureModal({
             .join("\n")
         : verses.map((v) => `${v.verse} ${v.text}`).join("\n");
 
-    const fullText = `${reference} (${version})\n${toCopy}`;
+    const fullText = `${getSelectedReference()} (${version})\n${toCopy}`;
     try {
       await navigator.clipboard.writeText(fullText);
       setCopied(true);
@@ -121,7 +132,7 @@ export default function ScriptureModal({
         >
           <div>
             <h2
-              className="text-base font-semibold"
+              className="text-sm font-semibold"
               style={{ color: "var(--accent)" }}
             >
               {reference}

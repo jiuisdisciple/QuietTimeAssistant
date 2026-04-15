@@ -43,8 +43,8 @@ async function fetchTomorrowForAllUsers(dateStr: string) {
   };
 }
 
-// Vercel Cron: runs at 9:00, 9:30, 10:00, 10:30, 11:00, 11:30 PM KST
-// (0,30 12,13,14 * * * in UTC)
+// Vercel Cron: runs at 9:00 PM KST (21:00 KST = 12:00 UTC)
+// CDMB publishes the next day's passage by ~9 PM KST, so we fetch then.
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

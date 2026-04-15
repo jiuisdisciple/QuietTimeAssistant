@@ -186,6 +186,17 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Generate missing AI summary on-demand (cron may have timed out)
+      if (!row.ai_summary) {
+        try {
+          const summary = await generateSummary(row.full_reference);
+          await sql`UPDATE passages SET ai_summary = ${summary} WHERE user_id = ${user.id} AND date = ${date}`;
+          row.ai_summary = summary;
+        } catch (e) {
+          console.error("Lazy AI summary generation failed:", e);
+        }
+      }
+
       return NextResponse.json(row);
     }
 
