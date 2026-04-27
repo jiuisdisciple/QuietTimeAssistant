@@ -174,7 +174,8 @@ export default function DevotionClient({
         }),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const ct = res.headers.get("content-type") || "";
+        const err = ct.includes("json") ? await res.json() : {};
         alert(`피드백 실패: ${err.error || "알 수 없는 오류"}`);
         return;
       }

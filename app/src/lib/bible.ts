@@ -99,7 +99,9 @@ export function parseReference(reference: string): ParsedReference | null {
   const trimmed = reference.trim();
 
   // Pattern A: standard "book ch:start[-end]"
-  let match = trimmed.match(/^([^\d\s]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
+  // Book name uses non-greedy \S+? so names with embedded digits
+  // (요한1서, 요한2서, 요한3서) parse correctly.
+  let match = trimmed.match(/^(\S+?)\s*(\d+):(\d+)(?:-(\d+))?$/);
   if (match) {
     const [, bookNameRaw, chapter, startVerse, endVerse] = match;
     return buildParsed(bookNameRaw, chapter, startVerse, endVerse);
@@ -107,7 +109,7 @@ export function parseReference(reference: string): ParsedReference | null {
 
   // Pattern B: "book ch장" or "book ch장 start[-end]절" (whole chapter form)
   match = trimmed.match(
-    /^([^\d\s]+)\s*(\d+)장(?:\s*(\d+)(?:\s*-\s*(\d+))?절?)?$/
+    /^(\S+?)\s*(\d+)장(?:\s*(\d+)(?:\s*-\s*(\d+))?절?)?$/
   );
   if (match) {
     const [, bookNameRaw, chapter, startVerse, endVerse] = match;
